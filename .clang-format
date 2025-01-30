@@ -1,0 +1,23 @@
+BasedOnStyle: Microsoft
+# IndentWidth: 4
+# UseTab: Never
+ColumnLimit: 110
+# AllowShortBlocksOnASingleLine: Empty
+# AllowShortCaseLabelsOnASingleLine: True
+# AllowShortFunctionsOnASingleLine: Inline
+# BreakBeforeBraces: Linux
+# BinPackParameters: OnePerLine
+# SpaceBeforeParens: ControlStatements
+# SpacesInParentheses: false
+# SpaceAfterCStyleCast: true
+# SpacesInAngles: false
+# SpaceBeforeSquareBrackets: false
+# SpacesInSquareBrackets: false
+# SortIncludes: false
+# IncludeBlocks: Preserve
+# DerivePointerBinding: false
+# PointerAlignment: Left
+# AlignConsecutiveDeclarations: true
+# AlignConsecutiveAssignments: true
+# AlignTrailingComments: true
+# BreakTemplateDeclarations: no

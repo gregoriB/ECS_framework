@@ -3,6 +3,7 @@
 #include "core.hpp"
 #include "entities.hpp"
 
+// clang-format off
 namespace Stage1
 {
 inline std::function<void(ECM &ecm, float, float, float, float)> getEntityConstructor(char c)
@@ -19,9 +20,44 @@ inline std::function<void(ECM &ecm, float, float, float, float)> getEntityConstr
 };
 
 const std::vector<std::string_view> stage{
-    "    A A A A A A A A A A A   ", "    A A A A A A A A A A A   ", "    A A A A A A A A A A A   ",
-    "    A A A A A A A A A A A   ", "    A A A A A A A A A A A   ", "    A A A A A A A A A A A   ",
-    "                            ", "                            ", "                            ",
-    "                            ", "             P              ", "                            ",
+    "                            ",
+    "                            ",
+    "    A A A A A A A A A A A   ", 
+    "                            ",
+    "    A A A A A A A A A A A   ", 
+    "                            ",
+    "    A A A A A A A A A A A   ",
+    "                            ",
+    "    A A A A A A A A A A A   ", 
+    "                            ",
+    "    A A A A A A A A A A A   ", 
+    "                            ",
+    "    A A A A A A A A A A A   ",
+    "                            ", 
+    "                            ", 
+    "                            ",
+    "                            ", 
+    "                            ",
+    "                            ",
+    "             P              ", 
+    "                            ",
+    "                            ",
+    "                            ",
+};
+
+const std::vector<std::string_view> testStage{
+    "                            ", 
+    "                            ", 
+    "                            ",
+    "                            ", 
+    "                            ", 
+    "                            ",
+    "             P              ", 
+    "                            ", 
+    "                            ",
+    "                            ", 
+    "                            ", 
+    "                            ",
 };
 } // namespace Stage1
+// clang-format on

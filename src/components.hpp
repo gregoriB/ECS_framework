@@ -186,16 +186,22 @@ template <typename T> class Components
      * @param Transformation pipeline behavior
      */
     template <typename Func>
-    void mutate(Func &&fn, Transformation behavior = Transformation::DEFAULT)
+    void mutate(Func &&fn)
         requires std::invocable<Func, T &>
     {
         static_assert(std::is_convertible_v<std::invoke_result_t<Func, T &>, void>,
-                      "Mutate function must not return a value.");
+                      "Mutate function should not return a value.");
 
         if (isEmpty())
             return;
 
-        handleTransformations(behavior);
+        // Cannot perform mutations on transformed components.
+        // Maybe this could change in the future, but as of the time
+        // of writing this, the transformation pipeline implementation
+        // is such that the transformations are overwritten every time
+        // a method if called anyway to ensure they are not stale
+        // TODO Task : Reevaluate this and transformation pipelines
+        handleTransformations(Transformation::PRESERVE);
 
         for (auto &comp : *this)
             fn(comp);
@@ -212,7 +218,7 @@ template <typename T> class Components
         requires std::invocable<Func, const T &>
     {
         static_assert(std::is_convertible_v<std::invoke_result_t<Func, const T &>, void>,
-                      "Inspect function must not return a value.");
+                      "Inspect function should not return a value.");
 
         if (isEmpty())
             return;
@@ -271,9 +277,7 @@ template <typename T> class Components
     }
 
     /**
-     * @brief Extract a value as readonly
-     *
-     * Since this returns a reference to the component property, it will error if there aren't any components
+     * @brief Extract a value as readonly.  THROWS AN ERROR IF THE COMPONENT IS EMPTY!
      *
      * @param T::Prop
      * @param Transformation pipeline behavior
@@ -283,30 +287,19 @@ template <typename T> class Components
     template <typename Prop>
     [[nodiscard]] const Prop &peek(Prop T::*prop, Transformation behavior = Transformation::DEFAULT)
     {
+        if (isEmpty())
+        {
+            GAME_LOG_WARNING("Property:", getTypeName<decltype(prop)>(),
+                             "could not be peeked from Component:", getTypeName<T>())
+            throw std::runtime_error("Component is Empty");
+        }
+
         handleTransformations(behavior);
 
         for (auto &comp : *this)
             return comp.*prop;
 
-        GAME_LOG_WARNING("Property:", getTypeName<decltype(prop)>(),
-                         "could not be peeked from Component:", getTypeName<T>())
-        PRINT("Check that the component exists before peeking at it!\n")
-        throw std::runtime_error("Component not found");
-    }
-
-    // TODO Task : Reevaluate if this is really needed
-    template <typename Prop>
-    [[nodiscard]] Prop &extract(Prop T::*prop, Transformation behavior = Transformation::DEFAULT)
-    {
-        handleTransformations(behavior);
-
-        for (auto &comp : *this)
-            return comp.*prop;
-
-        GAME_LOG_WARNING("Property:", getTypeName<decltype(prop)>(),
-                         "could not be extracted from Component:", getTypeName<T>())
-        PRINT("Check that the component exists before extracting data from it!\n")
-        throw std::runtime_error("Component not found");
+        throw std::runtime_error("Component is Empty");
     }
 
     /**
@@ -504,17 +497,17 @@ template <typename T> class Components
         static_assert(std::is_invocable_v<Func, T &, const T &>,
                       "Reduce function must take const T& as argument.");
         static_assert(std::is_convertible_v<std::invoke_result_t<Func, T &, const T &>, void>,
-                      "Reduce function must not return a value.");
+                      "Reduce function should not return a value.");
 
         if (isEmpty())
-            return std::move(reduced);
+            return reduced;
 
         handleTransformations(behavior);
 
         for (auto &comp : *this)
             fn(reduced, comp);
 
-        return std::move(reduced);
+        return reduced;
     }
 
     /**
@@ -538,7 +531,7 @@ template <typename T> class Components
         static_assert(std::is_invocable_v<Func, T &, const T &>,
                       "Reduce function must take const T& as argument.");
         static_assert(std::is_convertible_v<std::invoke_result_t<Func, T &, const T &>, void>,
-                      "Reduce function must not return a value.");
+                      "Reduce function should not return a value.");
         static_assert(std::is_default_constructible_v<T>, "Component is not default constructable");
 
         return reduce(fn, T{}, behavior);
@@ -588,7 +581,7 @@ template <typename T> class Components
         return true;
     }
 
-#ifdef game_allow_debug
+#ifdef ecs_allow_debug
     void printData()
     {
         auto arrangement = getArrangement();
@@ -616,7 +609,7 @@ template <typename T> class Components
         emplace_back(args...);
     }
 
-#ifdef game_allow_unsafe
+#ifdef ecs_allow_unsafe
   public:
 #else
   private:
@@ -757,7 +750,7 @@ template <typename T> class Components
 
     Transformer<T> m_transformer;
 
-#ifdef game_allow_debug
+#ifdef ecs_allow_debug
   public:
 #else
   private:

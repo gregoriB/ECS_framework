@@ -14,10 +14,26 @@ class Game
             return;
 
         m_renderManager.startRender();
-        loop();
+        withBenchmarks([&]() -> int { return loop(); });
     }
 
   private:
+    inline void withBenchmarks(std::function<float()> fn)
+    {
+        auto start = std::chrono::high_resolution_clock::now();
+
+        int cycles = fn();
+        if (cycles == 0)
+            cycles = 1;
+
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<float> duration = end - start;
+        auto avg = duration.count() / cycles;
+        auto framerate = cycles / (avg * cycles);
+
+        PRINT("average frame time:", avg, "for", cycles, "frames\n", "  average FPS:", framerate);
+    };
+
     bool init()
     {
         try
@@ -36,7 +52,7 @@ class Game
         return true;
     }
 
-    void loop()
+    int loop()
     {
         int cycles{0};
         int limit{200000};
@@ -81,6 +97,8 @@ class Game
         std::cout << "\n $$$$$ GAME OVER $$$$$ \n\n";
 
         m_renderManager.exit();
+
+        return cycles;
     }
 
     void setDeltaTime(float delta)

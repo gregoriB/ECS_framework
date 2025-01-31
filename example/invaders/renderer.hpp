@@ -110,7 +110,7 @@ template <typename EntityId> class Manager
 
     void clear()
     {
-        SDL_SetRenderDrawColor(m_renderer, 0xFF, 0xDD, 0x00, 0xFF);
+        SDL_SetRenderDrawColor(m_renderer, 0x00, 0x00, 0x00, 0xFF);
         SDL_RenderClear(m_renderer);
     }
 

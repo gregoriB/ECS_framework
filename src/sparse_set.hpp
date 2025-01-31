@@ -85,7 +85,7 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
                 if (m_values[i])
                     func(m_ids[i], m_values[i]);
 
-#ifndef game_disable_auto_prune
+#ifndef ecs_disable_auto_prune
                 if (!m_values[i])
                 {
                     erase(m_ids[i]);
@@ -103,7 +103,7 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
                 if (m_values[i] && !func(m_ids[i], m_values[i]))
                     break;
 
-#ifndef game_disable_auto_prune
+#ifndef ecs_disable_auto_prune
                 if (!m_values[i])
                 {
                     erase(m_ids[i]);
@@ -237,7 +237,7 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
     std::vector<T> m_values{};
     std::vector<Id> m_ids{};
 
-#ifdef game_allow_debug
+#ifdef ecs_allow_debug
   public:
 #else
   private:

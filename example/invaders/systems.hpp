@@ -8,20 +8,45 @@
 
 namespace Systems
 {
+
+inline auto ai(ECM &ecm)
+{
+    auto [hiveId, hiveMovementEffect] = ecm.getUniqueEntity<HiveMovementEffect>();
+    auto &aiHiveComps = ecm.getAll<HiveAIComponent>();
+    hiveMovementEffect.mutate([&](HiveMovementEffect &hiveMovementEffect) {
+        auto elapsed = hiveMovementEffect.timer->getElapsedTime();
+
+        ecm.getAll<HiveAIComponent>().each([&](EId eId, auto &_) {
+            if (elapsed < hiveMovementEffect.moveInterval)
+                return;
+
+            ecm.add<AIInputEvent>(eId, hiveMovementEffect.movement);
+        });
+
+        if (elapsed < hiveMovementEffect.moveInterval)
+            return;
+
+        if (hiveMovementEffect.movement == Movement::DOWN)
+            hiveMovementEffect.movement = Movement::LEFT;
+
+        hiveMovementEffect.timer->restart();
+    });
+
+    return [&]() {};
+}
+
 inline auto input(ECM &ecm)
 {
     float dt = Utilties::getDeltaTime(ecm);
-
     ecm.getAll<PlayerInputEvent>().each([&](EId eId, auto &playerInputEvents) {
-        if (ecm.get<DeactivatedComponent>(eId))
-            return;
-
         auto &speeds = ecm.get<MovementComponent>(eId).peek(&MovementComponent::speeds);
+        float baseSpeed = speeds.x * dt;
         playerInputEvents.inspect([&](const PlayerInputEvent &inputEvent) {
             switch (inputEvent.action)
             {
             case Action::SHOOT:
                 ecm.add<AttackEvent>(eId);
+                break;
             case Action::QUIT: {
                 auto [gameId, _] = ecm.getUniqueEntity<GameComponent>();
                 ecm.add<GameEvent>(gameId, GameEvents::QUIT);
@@ -34,10 +59,10 @@ inline auto input(ECM &ecm)
             switch (inputEvent.movement)
             {
             case Movement::LEFT:
-                ecm.add<MovementEvent>(eId, Vector2{-speeds.x + (dt * 0.5f), 0});
+                ecm.add<MovementEvent>(eId, Vector2{-1 * baseSpeed, 0});
                 break;
             case Movement::RIGHT:
-                ecm.add<MovementEvent>(eId, Vector2{speeds.x + (dt * 0.5f), 0});
+                ecm.add<MovementEvent>(eId, Vector2{baseSpeed, 0});
                 break;
             default:
                 break;
@@ -50,11 +75,14 @@ inline auto input(ECM &ecm)
             return;
 
         auto &speeds = ecm.get<MovementComponent>(eId).peek(&MovementComponent::speeds);
+        float baseSpeedX = speeds.x;
+        float baseSpeedY = speeds.y;
+
         aiInputEvents.inspect([&](const AIInputEvent &inputEvent) {
             switch (inputEvent.action)
             {
             case Action::SHOOT:
-                ecm.add<AttackEffect>(eId);
+                ecm.add<AttackEvent>(eId);
             default:
                 break;
             }
@@ -62,16 +90,16 @@ inline auto input(ECM &ecm)
             switch (inputEvent.movement)
             {
             case Movement::LEFT:
-                ecm.add<MovementEvent>(eId, Vector2{-speeds.x + (dt * 0.5f), 0});
+                ecm.add<MovementEvent>(eId, Vector2{-1 * baseSpeedX, 0});
                 break;
             case Movement::RIGHT:
-                ecm.add<MovementEvent>(eId, Vector2{speeds.x + (dt * 0.5f), 0});
+                ecm.add<MovementEvent>(eId, Vector2{baseSpeedX, 0});
                 break;
             case Movement::DOWN:
-                ecm.add<MovementEvent>(eId, Vector2{speeds.y + (dt * 0.5f), 0});
+                ecm.add<MovementEvent>(eId, Vector2{0, baseSpeedY});
                 break;
             case Movement::UP:
-                ecm.add<MovementEvent>(eId, Vector2{-speeds.y + (dt * 0.5f), 0});
+                ecm.add<MovementEvent>(eId, Vector2{0, -1 * baseSpeedY});
                 break;
             default:
                 break;
@@ -84,31 +112,86 @@ inline auto input(ECM &ecm)
 
 inline auto movement(ECM &ecm)
 {
-    ecm.getAll<MovementEvent>().each([&](EId eId, auto &movementEvents) {
-        auto [playerComps, aiComps, positionComps] =
-            ecm.gather<PlayerComponent, AIComponent, PositionComponent>(eId);
-        auto reducedEvent = movementEvents.reduce([&](MovementEvent acc, const MovementEvent &current) {
+    auto [movementEffects, movementEvents] = ecm.gatherAll<MovementEffect, MovementEvent>();
+
+    float dt = Utilties::getDeltaTime(ecm);
+    movementEffects.each([&](EId eId, auto &movementEffects) {
+        movementEffects.inspect([&](const MovementEffect &movementEffect) {
+            auto [movementComps, positionComps, aiComps] =
+                ecm.gather<MovementComponent, PositionComponent, HiveAIComponent>(eId);
+            auto &speeds = movementComps.peek(&MovementComponent::speeds);
+            auto &position = positionComps.peek(&PositionComponent::bounds).position;
+            auto &targetPos = movementEffect.trajectory;
+
+            // clang-format off
+            Vector2 diff{position.x - targetPos.x, position.y - targetPos.y};
+            Vector2 directions{
+                diff.x < 0 ? 1.0f : diff.x > 0 ? -1.0f : 0,
+                diff.y < 0 ? 1.0f : diff.y > 0 ? -1.0f : 0,
+            };
+            // clang-format on
+
+            auto xMove = speeds.x * dt;
+            auto yMove = speeds.y * dt;
+            ecm.add<MovementEvent>(eId, Vector2{xMove * directions.x, yMove * directions.y});
+        });
+    });
+
+    movementEvents.each([&](EId eId, auto &movementEvents) {
+        auto [positionComps, projectileComps, hiveAIComps] =
+            ecm.gather<PositionComponent, ProjectileComponent, HiveAIComponent>(eId);
+
+        auto reducedEvent = movementEvents.reduce([&](MovementEvent &acc, const MovementEvent &current) {
             acc.coords.x += current.coords.x;
             acc.coords.y += current.coords.y;
         });
 
         positionComps.inspect([&](const PositionComponent &positionComp) {
+            auto [gameId, gameComps] = ecm.getUniqueEntity<GameComponent>();
+            auto [gX, gY, gW, gH] = gameComps.peek(&GameComponent::bounds).box();
+
             auto [x, y] = positionComp.bounds.position;
             auto [w, h] = positionComp.bounds.size;
+
             float newX = x + reducedEvent.coords.x;
             float newY = y + reducedEvent.coords.y;
             float newW = newX + w;
             float newH = newY + h;
 
-            auto [gameId, gameComps] = ecm.getUniqueEntity<GameComponent>();
-            auto [gX, gY, gW, gH] = gameComps.peek(&GameComponent::bounds).box();
-
-            bool isOutOfBounds = newX < gX || newW > gW || newY < gY || newH > gH;
+            bool isOutOfBounds = newX <= gX || newW >= gW || newY <= gY || newH >= gH;
             if (isOutOfBounds)
-                return;
+            {
+                if (projectileComps)
+                {
+                    if (newH < gY || newY > gH)
+                    {
+                        ecm.add<DeathEvent>(eId, 0);
+                        return;
+                    }
+                }
 
-            ecm.add<PositionEvent>(eId, Vector2{newX, newY});
+                if (hiveAIComps)
+                {
+                    if (newW >= gW || newX <= gX)
+                    {
+                        ecm.getAll<HiveMovementEffect>().each([&](EId hiveId, auto &hiveMovementEffects) {
+                            hiveMovementEffects.mutate([&](HiveMovementEffect &hiveMovementEffect) {
+                                switch (hiveMovementEffect.movement)
+                                {
+                                case Movement::LEFT:
+                                case Movement::RIGHT:
+                                    hiveMovementEffect.movement = Movement::DOWN;
+                                    break;
+                                }
+                            });
+                        });
+                        return;
+                    }
+                }
+            }
+
             ecm.add<CollisionCheckEvent>(eId, Bounds{newX, newY, w, h});
+            ecm.add<PositionEvent>(eId, Vector2{newX, newY});
         });
     });
 
@@ -124,13 +207,15 @@ inline auto collision(ECM &ecm)
             if (eId1 == eId2)
                 return;
 
-            auto [pX, pY, pH, pW] = positionComps.peek(&PositionComponent::bounds).box();
+            auto [pX, pY, pW, pH] = positionComps.peek(&PositionComponent::bounds).box();
             bool isX = (cX >= pX && cX <= pW) || (cW >= pX && cW <= pW);
             bool isY = (cY >= pY && cY <= pH) || (cH >= pY && cH <= pH);
             if (!isX || !isY)
                 return;
 
+            PRINT("DEATH", eId1, eId2)
             ecm.add<DeathEvent>(eId1, eId2);
+            ecm.add<DeathEvent>(eId2, eId1);
         });
     });
 
@@ -139,13 +224,17 @@ inline auto collision(ECM &ecm)
 
 inline auto death(ECM &ecm)
 {
-    ecm.getAll<DeathEvent>().each([&](EId eId, auto &deathEvents) {
-        ecm.add<DeathComponent>(eId);
-        ecm.add<DeactivatedComponent>(eId);
-
+    auto &deathEventsSet = ecm.getAll<DeathEvent>();
+    std::vector<EntityId> ids{};
+    deathEventsSet.each([&](EId eId, auto &deathEvents) -> void {
         if (ecm.get<PlayerComponent>(eId))
             ecm.add<GameEvent>(eId, GameEvents::GAME_OVER);
+
+        ids.push_back(eId);
     });
+
+    for (auto &id : ids)
+        ecm.clearAllByEntity(id);
 
     return [&]() {};
 };
@@ -166,9 +255,17 @@ inline auto position(ECM &ecm)
 
 inline auto attack(ECM &ecm)
 {
-    ecm.getAll<AttackComponent>().each([&](EId eId, auto &attackEvents) {
-        if (ecm.get<AttackEffect>(eId))
+    ecm.getAll<AttackEvent>().each([&](EId eId, auto &attackEvents) {
+        auto &attackEffects = ecm.get<AttackEffect>(eId);
+        if (attackEffects)
+        {
+            attackEffects.mutate([&](AttackEffect &attackEffect) {
+                if (!ecm.get<ProjectileComponent>(attackEffect.attackId))
+                    attackEffect.cleanup = true;
+            });
+
             return;
+        }
 
         if (!ecm.get<AttackComponent>(eId))
             return;
@@ -176,14 +273,22 @@ inline auto attack(ECM &ecm)
         auto [positionComps, playerComps, aiComps] =
             ecm.gather<PositionComponent, PlayerComponent, AIComponent>(eId);
         auto &bounds = positionComps.peek(&PositionComponent::bounds);
-        ecm.add<AttackEffect>(eId);
+        EntityId projectileId;
         if (playerComps)
-            createUpwardProjectile(ecm, bounds);
+            projectileId = createUpwardProjectile(ecm, bounds);
         else
-            createDownwardProjectile(ecm, bounds);
+            projectileId = createDownwardProjectile(ecm, bounds);
+
+        ecm.add<AttackEffect>(eId, projectileId);
     });
 
-    return [&]() {};
+    return [&]() {
+        ecm.getAll<AttackEffect>().each([&](EId eId, auto &attackEffects) {
+            attackEffects.remove([&](const AttackEffect &attackEffect) { return attackEffect.cleanup; });
+        });
+
+        ecm.prune<AttackEffect>();
+    };
 };
 
 inline auto player(ECM &ecm)
@@ -208,6 +313,8 @@ inline auto game(ECM &ecm)
                 break;
             }
             case GameEvents::GAME_OVER:
+                PRINT("GAME OVER")
+                break;
             default:
                 break;
             }
@@ -231,11 +338,20 @@ template <typename CleanupFuncs> inline void cleanup(ECM &ecm, CleanupFuncs &cle
 
 inline bool run(ECM &ecm)
 {
-    std::array<CleanupFunc, 8> cleanupFuncs{
-        Systems::input(ecm),     Systems::attack(ecm), Systems::movement(ecm), Systems::position(ecm),
-        Systems::collision(ecm), Systems::death(ecm),  Systems::player(ecm),   Systems::game(ecm),
+    // clang-format off
+    std::array<CleanupFunc, 9> cleanupFuncs{
+        Systems::ai(ecm),
+        Systems::input(ecm),
+        Systems::attack(ecm),
+        Systems::movement(ecm),
+        Systems::position(ecm),
+        Systems::collision(ecm),
+        Systems::death(ecm),
+        Systems::player(ecm),
+        Systems::game(ecm),
     };
 
+    // clang-format on
     cleanup(ecm, cleanupFuncs);
 
     auto [gameId, gameComps] = ecm.getUniqueEntity<GameComponent>();

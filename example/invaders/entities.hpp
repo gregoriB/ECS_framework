@@ -7,6 +7,8 @@
 inline void createGame(ECM &ecm, ScreenConfig &screen)
 {
     EntityId gameId = ecm.createEntity();
+
+    PRINT("CREATE GAME", gameId)
     ecm.add<GameMetaComponent>(gameId);
     ecm.add<GameComponent>(gameId,
                            Bounds{0, 0, static_cast<float>(screen.width), static_cast<float>(screen.height)});
@@ -14,43 +16,69 @@ inline void createGame(ECM &ecm, ScreenConfig &screen)
     ecm.lockSet<GameComponent>();
 }
 
+inline void createHive(ECM &ecm)
+{
+    EntityId hiveId = ecm.createEntity();
+    ecm.add<HiveComponent>(hiveId);
+}
+
 inline void player(ECM &ecm, float x, float y, float w, float h)
 {
     EntityId id = ecm.createEntity();
 
+    PRINT("CREATE PLAYER", id)
+    PRINT(x, y, w, h)
     ecm.add<PlayerComponent>(id);
-    ecm.add<PositionComponent>(id, Bounds{x, y, w, h});
-    ecm.add<SpriteComponent>(id, Renderer::RGBA{0, 0, 255, 1});
-    ecm.add<MovementComponent>(id, Vector2{1, 1});
+    ecm.add<PositionComponent>(id, Bounds{x - (w / 2), y + (h / 2), w + (w / 2), h - (h / 2)});
+    ecm.add<SpriteComponent>(id, Renderer::RGBA{0, 255, 0, 1});
+    ecm.add<MovementComponent>(id, Vector2{w * 10, w * 10});
+    ecm.add<AttackComponent>(id);
 };
 
 inline void alien(ECM &ecm, float x, float y, float w, float h)
 {
     EntityId id = ecm.createEntity();
-
+    auto [hiveId, _] = ecm.getUniqueEntity<HiveComponent>();
     ecm.add<AIComponent>(id);
+    ecm.add<HiveAIComponent>(id, hiveId);
     ecm.add<PositionComponent>(id, Bounds{x, y, w, h});
-    ecm.add<SpriteComponent>(id, Renderer::RGBA{255, 0, 0, 1});
-    ecm.add<MovementComponent>(id, Vector2{1, 1});
+    ecm.add<SpriteComponent>(id, Renderer::RGBA{255, 255, 255, 1});
+    ecm.add<MovementComponent>(id, Vector2{w / 2, w});
 };
 
-inline void createUpwardProjectile(ECM &ecm, Bounds bounds)
+inline EntityId createProjectile(ECM &ecm, Bounds bounds)
 {
     EntityId id = ecm.createEntity();
-    auto [x, y, w, h] = bounds.get();
-    float newW = w / 5;
-    ecm.add<PositionComponent>(id, Bounds{x + newW, y, x + w - newW, h});
-    ecm.add<MovementEffect>(id, Vector2{-x + newW, -10000});
-    ecm.add<MovementComponent>(id, Vector2{1, 1});
+    auto [w, h] = bounds.size;
+    ecm.add<MovementComponent>(id, Vector2{0, w * 10});
+    ecm.add<SpriteComponent>(id, Renderer::RGBA{255, 255, 255, 1});
+    return id;
 };
 
-inline void createDownwardProjectile(ECM &ecm, Bounds bounds)
+inline EntityId createUpwardProjectile(ECM &ecm, Bounds bounds)
 {
-    EntityId id = ecm.createEntity();
     auto [x, y, w, h] = bounds.get();
     float newW = w / 5;
-    ecm.add<PositionComponent>(id, Bounds{x + newW, y, x + w - newW, h});
-    ecm.add<MovementEffect>(id, Vector2{-x + newW, 10000});
-    ecm.add<MovementComponent>(id, Vector2{1, 1});
-    ecm.add<SpriteComponent>(id, Renderer::RGBA{0, 255, 0, 1});
+    float newH = h * 2;
+    float newX = x + (w / 2) - (newW / 2);
+    EntityId id = createProjectile(ecm, bounds);
+    ecm.add<MovementEffect>(id, Vector2{newX, -10000});
+    ecm.add<PositionComponent>(id, Bounds{newX, y - newH, newW, newH});
+    ecm.add<ProjectileComponent>(id, Movement::UP);
+
+    return id;
+}
+
+inline EntityId createDownwardProjectile(ECM &ecm, Bounds bounds)
+{
+    auto [x, y, w, h] = bounds.get();
+    float newW = w / 5;
+    float newH = h * 2;
+    float newX = x + (w / 2) - (newW / 2);
+    EntityId id = createProjectile(ecm, bounds);
+    ecm.add<MovementEffect>(id, Vector2{newX, 10000});
+    ecm.add<PositionComponent>(id, Bounds{newX, y - newH, newW, newH});
+    ecm.add<ProjectileComponent>(id, Movement::DOWN);
+
+    return id;
 };

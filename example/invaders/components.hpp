@@ -32,6 +32,19 @@ struct AIComponent : Unique
 {
 };
 
+struct HiveComponent : Unique
+{
+};
+
+struct HiveAIComponent : Unique
+{
+    EntityId hiveId;
+
+    HiveAIComponent(EntityId _hiveId) : hiveId(_hiveId)
+    {
+    }
+};
+
 struct PlayerInputEvent : Event
 {
     Movement movement = Movement::NONE;
@@ -66,6 +79,16 @@ struct AIInputEvent : Event
 
 struct AIMovementEffect : Effect
 {
+};
+
+struct HiveMovementEffect : Effect
+{
+    Movement movement;
+    float moveInterval{0.5f};
+
+    HiveMovementEffect(Movement _movement) : movement(_movement), Effect(0)
+    {
+    }
 };
 
 struct MovementEffect : Effect
@@ -164,6 +187,11 @@ struct AttackEvent : Event
 
 struct AttackEffect : Effect
 {
+    EntityId attackId;
+
+    AttackEffect(EntityId _attackId) : attackId(_attackId)
+    {
+    }
 };
 
 struct GameComponent : Unique
@@ -200,6 +228,15 @@ struct SpriteComponent : Unique
     Renderer::RGBA rgba;
 
     SpriteComponent(Renderer::RGBA _rgba) : rgba(_rgba)
+    {
+    }
+};
+
+struct ProjectileComponent : Unique
+{
+    Movement movement;
+
+    ProjectileComponent(Movement _movement) : movement(_movement)
     {
     }
 };

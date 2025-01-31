@@ -10,18 +10,25 @@
 
 namespace Utilties
 {
+inline void initHiveAI(ECM &ecm)
+{
+    auto [hiveId, hiveComps] = ecm.getUniqueEntity<HiveComponent>();
+    ecm.add<HiveMovementEffect>(hiveId, Movement::RIGHT);
+};
+
 inline void stageBuilder(ECM &ecm, const std::vector<std::string_view> &stage, ScreenConfig &screen)
 {
     int tileSize = screen.width / stage[0].size();
-    PRINT(screen.width, screen.height, tileSize, stage[0].size(), stage.size())
 
     for (int row = 0; row < stage.size(); ++row)
     {
-        for (int col = 0; col < stage[0].size(); ++col)
+        for (int col = 0; col < stage[row].size(); ++col)
         {
             auto constructor = Stage1::getEntityConstructor(stage[row][col]);
-            if (constructor)
-                constructor(ecm, col * tileSize, row * tileSize, 1, 1);
+            if (!constructor)
+                continue;
+
+            constructor(ecm, col * tileSize, row * tileSize, tileSize, tileSize);
         }
     }
 };
@@ -30,6 +37,7 @@ inline void setup(ECM &ecm, ScreenConfig &screen)
 {
     createGame(ecm, screen);
     stageBuilder(ecm, Stage1::stage, screen);
+    initHiveAI(ecm);
 };
 
 inline void updateDeltaTime(ECM &ecm, float delta)
@@ -48,6 +56,7 @@ inline void registerPlayerInputs(ECM &ecm, std::vector<Inputs> &inputs)
 {
     auto [playerId, _] = ecm.getUniqueEntity<PlayerComponent>();
     for (const auto &input : inputs)
+    {
         switch (input)
         {
         case Inputs::SHOOT:
@@ -68,6 +77,7 @@ inline void registerPlayerInputs(ECM &ecm, std::vector<Inputs> &inputs)
         default:
             break;
         }
+    }
 };
 
 inline void registerAIInputs(ECM &ecm, EId eId, std::vector<Inputs> &inputs)
@@ -108,8 +118,8 @@ inline std::vector<Renderer::RenderableElement> getRenderableElements(ECM &ecm)
     std::vector<Renderer::RenderableElement> elements{};
     ecm.getAll<SpriteComponent>().each([&](EId eId, auto &spriteComps) {
         auto &rgba = spriteComps.peek(&SpriteComponent::rgba);
-        auto [x, y, w, h] = ecm.get<PositionComponent>(eId).peek(&PositionComponent::bounds).box();
-        elements.emplace_back(x, y, x + w, y + h, rgba);
+        auto [x, y, w, h] = ecm.get<PositionComponent>(eId).peek(&PositionComponent::bounds).get();
+        elements.emplace_back(x, y, w, h, rgba);
     });
 
     return elements;

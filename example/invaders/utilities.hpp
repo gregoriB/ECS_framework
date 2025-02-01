@@ -10,10 +10,63 @@
 
 namespace Utilties
 {
+inline void updateOutsideHiveAliens(ECM &ecm, const HiveComponent &hiveComp)
+{
+    auto [x, y, w, h] = hiveComp.bounds.box();
+    ecm.getAll<HiveAIComponent>().each([&](EId eId, auto &_) {
+        auto [aiX, aiY, aiW, aiH] = ecm.get<PositionComponent>(eId).peek(&PositionComponent::bounds).box();
+        if (aiX <= x)
+            ecm.add<LeftAlienComponent>(eId);
+        if (aiW >= w)
+            ecm.add<RightAlienComponent>(eId);
+    });
+}
+
+inline void updateOutsideHiveAliens(ECM &ecm, EId hiveId)
+{
+    ecm.get<HiveComponent>(hiveId).inspect(
+        [&](const HiveComponent &hiveComp) { updateOutsideHiveAliens(ecm, hiveComp); });
+}
+
+inline void updateHiveBounds(ECM &ecm, HiveComponent &hiveComp)
+{
+    PRINT("UPDATING HIVE BOUNDS")
+    constexpr int MIN_INT = std::numeric_limits<int>::min();
+    constexpr int MAX_INT = std::numeric_limits<int>::max();
+
+    Vector2 topLeft{MAX_INT, MAX_INT};
+    Vector2 bottomRight{MIN_INT, MIN_INT};
+
+    ecm.getAll<HiveAIComponent>().each([&](EId eId, auto &_) {
+        ecm.get<PositionComponent>(eId).inspect([&](const PositionComponent &posComp) {
+            auto [x, y, w, h] = posComp.bounds.box();
+            if (x < topLeft.x)
+                topLeft.x = x;
+            if (y < topLeft.y)
+                topLeft.y = y;
+            if (w > bottomRight.x)
+                bottomRight.x = w;
+            if (h > bottomRight.y)
+                bottomRight.y = h;
+        });
+    });
+
+    hiveComp.bounds = Bounds{topLeft, Vector2{bottomRight.x - topLeft.x, bottomRight.y - topLeft.y}};
+    updateOutsideHiveAliens(ecm, hiveComp);
+}
+
+inline void updateHiveBounds(ECM &ecm, EId hiveId)
+{
+    ecm.get<HiveComponent>(hiveId).inspect(
+        [&](const HiveComponent &hiveComp) { updateOutsideHiveAliens(ecm, hiveComp); });
+}
+
 inline void initHiveAI(ECM &ecm)
 {
     auto [hiveId, hiveComps] = ecm.getUniqueEntity<HiveComponent>();
-    ecm.add<HiveMovementEffect>(hiveId, Movement::RIGHT);
+    hiveComps.mutate([&](HiveComponent &hiveComp) { updateHiveBounds(ecm, hiveComp); });
+    using Movements = decltype(HiveMovementEffect::movement);
+    ecm.add<HiveMovementEffect>(hiveId, Movements::RIGHT);
 };
 
 inline void stageBuilder(ECM &ecm, const std::vector<std::string_view> &stage, ScreenConfig &screen)
@@ -36,6 +89,7 @@ inline void stageBuilder(ECM &ecm, const std::vector<std::string_view> &stage, S
 inline void setup(ECM &ecm, ScreenConfig &screen)
 {
     createGame(ecm, screen);
+    createHive(ecm);
     stageBuilder(ecm, Stage1::stage, screen);
     initHiveAI(ecm);
 };
@@ -55,21 +109,23 @@ inline float getDeltaTime(ECM &ecm)
 inline void registerPlayerInputs(ECM &ecm, std::vector<Inputs> &inputs)
 {
     auto [playerId, _] = ecm.getUniqueEntity<PlayerComponent>();
+    using Movements = decltype(PlayerInputEvent::movement);
+    using Actions = decltype(PlayerInputEvent::action);
     for (const auto &input : inputs)
     {
         switch (input)
         {
         case Inputs::SHOOT:
-            ecm.add<PlayerInputEvent>(playerId, Action::SHOOT);
+            ecm.add<PlayerInputEvent>(playerId, Actions::SHOOT);
             break;
         case Inputs::LEFT:
-            ecm.add<PlayerInputEvent>(playerId, Movement::LEFT);
+            ecm.add<PlayerInputEvent>(playerId, Movements::LEFT);
             break;
         case Inputs::RIGHT:
-            ecm.add<PlayerInputEvent>(playerId, Movement::RIGHT);
+            ecm.add<PlayerInputEvent>(playerId, Movements::RIGHT);
             break;
         case Inputs::QUIT:
-            ecm.add<PlayerInputEvent>(playerId, Action::QUIT);
+            ecm.add<PlayerInputEvent>(playerId, Actions::QUIT);
             break;
         case Inputs::UP:
         case Inputs::DOWN:
@@ -82,23 +138,25 @@ inline void registerPlayerInputs(ECM &ecm, std::vector<Inputs> &inputs)
 
 inline void registerAIInputs(ECM &ecm, EId eId, std::vector<Inputs> &inputs)
 {
+    using Movements = decltype(AIInputEvent::movement);
+    using Actions = decltype(AIInputEvent::action);
     for (const auto &input : inputs)
         switch (input)
         {
         case Inputs::SHOOT:
-            ecm.add<AIInputEvent>(eId, Action::SHOOT);
+            ecm.add<AIInputEvent>(eId, Actions::SHOOT);
             break;
         case Inputs::LEFT:
-            ecm.add<AIInputEvent>(eId, Movement::LEFT);
+            ecm.add<AIInputEvent>(eId, Movements::LEFT);
             break;
         case Inputs::RIGHT:
-            ecm.add<AIInputEvent>(eId, Movement::RIGHT);
+            ecm.add<AIInputEvent>(eId, Movements::RIGHT);
             break;
         case Inputs::UP:
-            ecm.add<AIInputEvent>(eId, Movement::UP);
+            ecm.add<AIInputEvent>(eId, Movements::UP);
             break;
         case Inputs::DOWN:
-            ecm.add<AIInputEvent>(eId, Movement::DOWN);
+            ecm.add<AIInputEvent>(eId, Movements::DOWN);
             break;
         case Inputs::MENU:
         case Inputs::QUIT:

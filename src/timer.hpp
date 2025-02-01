@@ -10,6 +10,11 @@ class Timer
         restart();
     }
 
+    bool isStopped() const
+    {
+        return stopped;
+    }
+
     bool hasElapsed() const
     {
         return getElapsedTime() >= duration;
@@ -29,6 +34,7 @@ class Timer
 
     void restart()
     {
+        stopped = false;
         start = std::chrono::steady_clock::now();
     }
 
@@ -37,7 +43,13 @@ class Timer
         return duration;
     }
 
+    void stop()
+    {
+        stopped = true;
+    }
+
   private:
     float duration{0};
+    bool stopped{};
     std::chrono::steady_clock::time_point start;
 };

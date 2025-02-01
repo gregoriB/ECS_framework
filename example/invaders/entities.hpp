@@ -16,13 +16,15 @@ inline void createGame(ECM &ecm, ScreenConfig &screen)
     ecm.lockSet<GameComponent>();
 }
 
-inline void createHive(ECM &ecm)
+inline EntityId createHive(ECM &ecm)
 {
     EntityId hiveId = ecm.createEntity();
     ecm.add<HiveComponent>(hiveId);
+
+    return hiveId;
 }
 
-inline void player(ECM &ecm, float x, float y, float w, float h)
+inline EntityId player(ECM &ecm, float x, float y, float w, float h)
 {
     EntityId id = ecm.createEntity();
 
@@ -32,10 +34,12 @@ inline void player(ECM &ecm, float x, float y, float w, float h)
     ecm.add<PositionComponent>(id, Bounds{x - (w / 2), y + (h / 2), w + (w / 2), h - (h / 2)});
     ecm.add<SpriteComponent>(id, Renderer::RGBA{0, 255, 0, 1});
     ecm.add<MovementComponent>(id, Vector2{w * 10, w * 10});
-    ecm.add<AttackComponent>(id);
+    ecm.add<AttackComponent>(id, Movements::UP);
+
+    return id;
 };
 
-inline void alien(ECM &ecm, float x, float y, float w, float h)
+inline EntityId alien(ECM &ecm, float x, float y, float w, float h)
 {
     EntityId id = ecm.createEntity();
     auto [hiveId, _] = ecm.getUniqueEntity<HiveComponent>();
@@ -44,7 +48,25 @@ inline void alien(ECM &ecm, float x, float y, float w, float h)
     ecm.add<PositionComponent>(id, Bounds{x, y, w, h});
     ecm.add<SpriteComponent>(id, Renderer::RGBA{255, 255, 255, 1});
     ecm.add<MovementComponent>(id, Vector2{w / 2, w});
+
+    return id;
 };
+
+inline EntityId leftAlien(ECM &ecm, float x, float y, float w, float h)
+{
+    EntityId id = alien(ecm, x, y, w, h);
+    ecm.add<LeftAlienComponent>(id);
+
+    return id;
+}
+
+inline EntityId rightAlien(ECM &ecm, float x, float y, float w, float h)
+{
+    EntityId id = alien(ecm, x, y, w, h);
+    ecm.add<RightAlienComponent>(id);
+
+    return id;
+}
 
 inline EntityId createProjectile(ECM &ecm, Bounds bounds)
 {
@@ -64,7 +86,8 @@ inline EntityId createUpwardProjectile(ECM &ecm, Bounds bounds)
     EntityId id = createProjectile(ecm, bounds);
     ecm.add<MovementEffect>(id, Vector2{newX, -10000});
     ecm.add<PositionComponent>(id, Bounds{newX, y - newH, newW, newH});
-    ecm.add<ProjectileComponent>(id, Movement::UP);
+    using Movements = decltype(ProjectileComponent::movement);
+    ecm.add<ProjectileComponent>(id, Movements::UP);
 
     return id;
 }
@@ -78,7 +101,8 @@ inline EntityId createDownwardProjectile(ECM &ecm, Bounds bounds)
     EntityId id = createProjectile(ecm, bounds);
     ecm.add<MovementEffect>(id, Vector2{newX, 10000});
     ecm.add<PositionComponent>(id, Bounds{newX, y - newH, newW, newH});
-    ecm.add<ProjectileComponent>(id, Movement::DOWN);
+    using Movements = decltype(ProjectileComponent::movement);
+    ecm.add<ProjectileComponent>(id, Movements::DOWN);
 
     return id;
 };

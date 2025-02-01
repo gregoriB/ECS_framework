@@ -6,7 +6,7 @@
 // clang-format off
 namespace Stage1
 {
-inline std::function<void(ECM &ecm, float, float, float, float)> getEntityConstructor(char c)
+inline std::function<EntityId(ECM &ecm, float, float, float, float)> getEntityConstructor(char c)
 {
     switch (c)
     {
@@ -45,9 +45,24 @@ const std::vector<std::string_view> stage{
     "                            ",
 };
 
-const std::vector<std::string_view> testStage{
+const std::vector<std::string_view> testStage1{
     "                            ", 
     "                            ", 
+    "                            ",
+    "                            ", 
+    "                            ", 
+    "                            ",
+    "             P              ", 
+    "                            ", 
+    "                            ",
+    "                            ", 
+    "                            ", 
+    "                            ",
+};
+
+const std::vector<std::string_view> testStage2{
+    "                            ", 
+    "                          R ", 
     "                            ",
     "                            ", 
     "                            ", 

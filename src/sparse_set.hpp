@@ -3,6 +3,7 @@
 #include "components.hpp"
 #include "core.hpp"
 #include "utilities.hpp"
+#include <array>
 
 template <typename Id, typename T> class BaseSparseSet
 {
@@ -67,7 +68,7 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
     {
         static_assert(std::is_invocable_v<Func, Id, T &>, "Each function must take T& as argument.");
 
-        if constexpr (ReturnsBool<Func>)
+        if constexpr (ReturnsBool<Func, Id, T &>)
             eachWithBreak(func);
         else
             eachNoBreak(func);

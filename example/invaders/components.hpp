@@ -8,7 +8,7 @@ using Stacked = Tags::Component;
 using Event = Tags::Event;
 using Effect = Tags::Effect;
 
-enum class Movement
+enum class Movements
 {
     NONE = 0,
     LEFT,
@@ -17,7 +17,7 @@ enum class Movement
     DOWN
 };
 
-enum class Action
+enum class Actions
 {
     NONE = 0,
     SHOOT,
@@ -32,8 +32,16 @@ struct AIComponent : Unique
 {
 };
 
+struct LeftAlienComponent : Unique
+{
+};
+struct RightAlienComponent : Unique
+{
+};
+
 struct HiveComponent : Unique
 {
+    Bounds bounds{};
 };
 
 struct HiveAIComponent : Unique
@@ -47,32 +55,32 @@ struct HiveAIComponent : Unique
 
 struct PlayerInputEvent : Event
 {
-    Movement movement = Movement::NONE;
-    Action action = Action::NONE;
+    Movements movement = Movements::NONE;
+    Actions action = Actions::NONE;
 
-    PlayerInputEvent(Movement _movement, Action _action) : movement(_movement), action(_action)
+    PlayerInputEvent(Movements _movement, Actions _action) : movement(_movement), action(_action)
     {
     }
-    PlayerInputEvent(Movement _movement) : movement(_movement)
+    PlayerInputEvent(Movements _movement) : movement(_movement)
     {
     }
-    PlayerInputEvent(Action _action) : action(_action)
+    PlayerInputEvent(Actions _action) : action(_action)
     {
     }
 };
 
 struct AIInputEvent : Event
 {
-    Movement movement = Movement::NONE;
-    Action action = Action::NONE;
+    Movements movement = Movements::NONE;
+    Actions action = Actions::NONE;
 
-    AIInputEvent(Movement _movement, Action _action) : movement(_movement), action(_action)
+    AIInputEvent(Movements _movement, Actions _action) : movement(_movement), action(_action)
     {
     }
-    AIInputEvent(Movement _movement) : movement(_movement)
+    AIInputEvent(Movements _movement) : movement(_movement)
     {
     }
-    AIInputEvent(Action _action) : action(_action)
+    AIInputEvent(Actions _action) : action(_action)
     {
     }
 };
@@ -83,10 +91,11 @@ struct AIMovementEffect : Effect
 
 struct HiveMovementEffect : Effect
 {
-    Movement movement;
     float moveInterval{0.5f};
+    Movements movement;
+    Movements nextMove;
 
-    HiveMovementEffect(Movement _movement) : movement(_movement), Effect(0)
+    HiveMovementEffect(Movements _movement) : movement(_movement), Effect(0.5f)
     {
     }
 };
@@ -179,6 +188,11 @@ struct DamageComponent : Unique
 
 struct AttackComponent : Unique
 {
+    Movements direction;
+
+    AttackComponent(Movements _direction) : direction(_direction)
+    {
+    }
 };
 
 struct AttackEvent : Event
@@ -234,9 +248,9 @@ struct SpriteComponent : Unique
 
 struct ProjectileComponent : Unique
 {
-    Movement movement;
+    Movements movement;
 
-    ProjectileComponent(Movement _movement) : movement(_movement)
+    ProjectileComponent(Movements _movement) : movement(_movement)
     {
     }
 };

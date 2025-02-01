@@ -2,7 +2,7 @@
 
 #include "core.hpp"
 #include "renderer.hpp"
-#include "systems.hpp"
+#include "update.hpp"
 #include "utilities.hpp"
 
 class Game
@@ -73,7 +73,7 @@ class Game
 
             Utilties::registerPlayerInputs(m_entityComponentManager, inputs);
 
-            if (!Systems::Update::run(m_entityComponentManager))
+            if (!Update::run(m_entityComponentManager))
             {
                 PRINT("!! QUIT COMMAND ISSUED !!")
                 quit = true;

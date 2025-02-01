@@ -22,6 +22,9 @@ using EntityId = uint32_t;
 using EId = EntityId;
 using ECM = EntityComponentManager<EntityId>;
 
+constexpr bool BREAK = false;
+constexpr bool CONTINUE = true;
+
 enum class Inputs
 {
     UP,
@@ -39,7 +42,7 @@ struct ScreenConfig
     int height = 480;
 };
 
-inline const int SCREEN_FPS = 15;
+inline const int SCREEN_FPS = 150;
 inline const int SCREEN_TICKS_PER_FRAME = 1000 / SCREEN_FPS;
 
 class Vector2
@@ -61,6 +64,12 @@ class Bounds
     Vector2 position;
     Vector2 size;
 
+    Bounds()
+    {
+    }
+    Bounds(Vector2 _position, Vector2 _size) : position(_position), size(_size)
+    {
+    }
     Bounds(float _x, float _y, float _w, float _h) : position(_x, _y), size(_w, _h)
     {
     }

@@ -108,5 +108,5 @@ template <typename Enum> [[nodiscard]] inline constexpr std::array<Enum, getEnum
     return std::array<Enum, getEnumSize<Enum>()>{};
 }
 
-template <typename Func>
-concept ReturnsBool = std::same_as<std::invoke_result_t<Func>, bool>;
+template <typename Func, typename... Args>
+concept ReturnsBool = std::is_invocable_r_v<bool, Func, Args...>;

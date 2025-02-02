@@ -4,7 +4,7 @@
 #include "entities.hpp"
 
 // clang-format off
-namespace Stage1
+namespace Stages
 {
 inline std::function<EntityId(ECM &ecm, float, float, float, float)> getEntityConstructor(char c)
 {
@@ -23,7 +23,7 @@ inline std::function<EntityId(ECM &ecm, float, float, float, float)> getEntityCo
     return NULL;
 };
 
-const std::vector<std::string_view> stage{
+const std::vector<std::string_view> stage1{
     "                            ",
     "                            ",
     "    S S S S S S S S S S S   ", 
@@ -77,5 +77,17 @@ const std::vector<std::string_view> testStage2{
     "                            ", 
     "                            ",
 };
+
+inline std::vector<std::string_view> getStage(int stage)
+{
+   switch(stage) 
+   {
+    case 1:
+        return stage1;
+    default:
+        return stage1;
+   }
+}
+
 } // namespace Stage1
 // clang-format on

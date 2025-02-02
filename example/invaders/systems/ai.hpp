@@ -9,16 +9,25 @@ inline void cleanup(ECM &ecm)
 {
 }
 
-inline void updateOutsideHiveAliens(ECM &ecm, const HiveComponent &hiveComp)
+inline void updateOutsideHiveAliens(ECM &ecm, EId hiveId, const HiveComponent &hiveComp)
 {
     auto [x, y, w, h] = hiveComp.bounds.box();
-    ecm.getAll<HiveAIComponent>().each([&](EId eId, auto &_) {
+    auto &ids = ecm.getEntityIds<HiveAIComponent>();
+    if (ids.empty())
+    {
+        ecm.clearByEntity<HiveMovementEffect>(hiveId);
+        ecm.add<GameEvent>(hiveId, GameEvents::NEXT_STAGE);
+        return;
+    }
+
+    for (const auto &eId : ids)
+    {
         auto [aiX, aiY, aiW, aiH] = ecm.get<PositionComponent>(eId).peek(&PositionComponent::bounds).box();
         if (aiX <= x)
             ecm.add<LeftAlienComponent>(eId);
         if (aiW >= w)
             ecm.add<RightAlienComponent>(eId);
-    });
+    };
 }
 
 inline void updateHiveBounds(ECM &ecm, EId hiveId)
@@ -45,7 +54,7 @@ inline void updateHiveBounds(ECM &ecm, EId hiveId)
         });
 
         hiveComp.bounds = Bounds{topLeft, Vector2{bottomRight.x - topLeft.x, bottomRight.y - topLeft.y}};
-        updateOutsideHiveAliens(ecm, hiveComp);
+        updateOutsideHiveAliens(ecm, hiveId, hiveComp);
     });
 }
 

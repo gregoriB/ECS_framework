@@ -9,15 +9,17 @@ inline void createGame(ECM &ecm, Vector2 &size)
     EntityId gameId = ecm.createEntity();
 
     PRINT("CREATE GAME", gameId)
-    ecm.add<GameMetaComponent>(gameId);
+    ecm.add<GameMetaComponent>(gameId, size);
     ecm.add<GameComponent>(gameId, Bounds{0, 0, size.x, size.y});
     ecm.lockSet<GameMetaComponent>();
     ecm.lockSet<GameComponent>();
 }
 
-inline EntityId createHive(ECM &ecm, Vector2 &size)
+inline EntityId createHive(ECM &ecm)
 {
     EntityId hiveId = ecm.createEntity();
+    auto [_, gameMetaComps] = ecm.getUniqueEntity<GameMetaComponent>();
+    auto &size = gameMetaComps.peek(&GameMetaComponent::screen);
     ecm.add<HiveComponent>(hiveId);
     ecm.add<MovementComponent>(hiveId, Vector2{size.x / 200, size.y / 50});
     ecm.add<HiveMovementEffect>(hiveId, Movements::RIGHT);

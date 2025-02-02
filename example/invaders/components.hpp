@@ -208,6 +208,7 @@ struct GameComponent : Unique
 {
     Bounds bounds;
     bool isGameOver{};
+    int currentStage{1};
 
     GameComponent(Bounds _bounds) : bounds(_bounds)
     {
@@ -216,11 +217,18 @@ struct GameComponent : Unique
 
 struct GameMetaComponent : Unique
 {
+    Vector2 screen;
     float deltaTime{};
+
+    GameMetaComponent(Vector2 _screen) : screen(_screen)
+    {
+    }
 };
 
 enum class GameEvents
 {
+    NONE = 0,
+    NEXT_STAGE,
     GAME_OVER,
     QUIT,
 };

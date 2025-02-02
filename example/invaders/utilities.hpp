@@ -10,15 +10,17 @@
 
 namespace Utilties
 {
-inline void stageBuilder(ECM &ecm, const std::vector<std::string_view> &stage, ScreenConfig &screen)
+inline void stageBuilder(ECM &ecm, const std::vector<std::string_view> &stage)
 {
-    int tileSize = screen.width / stage[0].size();
+    auto [_, gameMetaComps] = ecm.getUniqueEntity<GameMetaComponent>();
+    auto &screen = gameMetaComps.peek(&GameMetaComponent::screen);
+    int tileSize = screen.x / stage[0].size();
 
     for (int row = 0; row < stage.size(); ++row)
     {
         for (int col = 0; col < stage[row].size(); ++col)
         {
-            auto constructor = Stage1::getEntityConstructor(stage[row][col]);
+            auto constructor = Stages::getEntityConstructor(stage[row][col]);
             if (!constructor)
                 continue;
 
@@ -31,8 +33,15 @@ inline void setup(ECM &ecm, ScreenConfig &screen)
 {
     Vector2 size{static_cast<float>(screen.width), static_cast<float>(screen.height)};
     createGame(ecm, size);
-    createHive(ecm, size);
-    stageBuilder(ecm, Stage1::stage, screen);
+
+    createHive(ecm);
+    stageBuilder(ecm, Stages::getStage(1));
+};
+
+inline void nextStage(ECM &ecm, int stage)
+{
+    createHive(ecm);
+    stageBuilder(ecm, Stages::getStage(stage));
 };
 
 inline void updateDeltaTime(ECM &ecm, float delta)

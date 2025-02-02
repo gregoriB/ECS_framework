@@ -173,10 +173,6 @@ struct DeathComponent : Unique
 {
 };
 
-struct DeactivatedComponent : Unique
-{
-};
-
 struct DamageComponent : Unique
 {
     float amount;
@@ -251,6 +247,19 @@ struct ProjectileComponent : Unique
     Movements movement;
 
     ProjectileComponent(Movements _movement) : movement(_movement)
+    {
+    }
+};
+
+struct PointsComponent : Unique
+{
+    int points;
+    int multiplier{1};
+
+    PointsComponent(int _points) : points(_points)
+    {
+    }
+    PointsComponent(int _points, int _multiplier) : points(_points), multiplier(_multiplier)
     {
     }
 };

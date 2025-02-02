@@ -22,8 +22,11 @@ class Timer
 
     float getElapsedTime() const
     {
+        if (isStopped())
+            return std::chrono::duration<float>(stopTime - startTime).count();
+
         auto now = std::chrono::steady_clock::now();
-        return std::chrono::duration<float>(now - start).count();
+        return std::chrono::duration<float>(now - startTime).count();
     }
 
     void update(float _seconds)
@@ -35,7 +38,7 @@ class Timer
     void restart()
     {
         stopped = false;
-        start = std::chrono::steady_clock::now();
+        startTime = std::chrono::steady_clock::now();
     }
 
     float getDuration() const
@@ -46,10 +49,12 @@ class Timer
     void stop()
     {
         stopped = true;
+        stopTime = std::chrono::steady_clock::now();
     }
 
   private:
     float duration{0};
     bool stopped{};
-    std::chrono::steady_clock::time_point start;
+    std::chrono::steady_clock::time_point startTime;
+    std::chrono::steady_clock::time_point stopTime;
 };

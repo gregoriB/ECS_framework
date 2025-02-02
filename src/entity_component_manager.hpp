@@ -110,6 +110,11 @@ template <typename EntityId> class EntityComponentManager
         return {id, *compsPtr};
     }
 
+    template <typename T> [[nodiscard]] const std::vector<EntityId> &getEntityIds()
+    {
+        return getComponentSet<T>(m_minSetSize).getIds();
+    }
+
     template <typename T> [[nodiscard]] ComponentSet<T> &getAll()
     {
         return getComponentSet<T>(m_minSetSize);

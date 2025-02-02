@@ -48,52 +48,9 @@ inline void movePlayer(ECM &ecm)
     });
 }
 
-inline void moveAI(ECM &ecm)
-{
-    ecm.getAll<AIInputEvent>().each([&](EId eId, auto &aiInputEvents) {
-        if (ecm.get<DeactivatedComponent>(eId))
-            return;
-
-        auto &speeds = ecm.get<MovementComponent>(eId).peek(&MovementComponent::speeds);
-        float baseSpeedX = speeds.x;
-        float baseSpeedY = speeds.y;
-
-        aiInputEvents.inspect([&](const AIInputEvent &inputEvent) {
-            using Actions = decltype(AIInputEvent::action);
-            switch (inputEvent.action)
-            {
-            case Actions::SHOOT:
-                ecm.add<AttackEvent>(eId);
-            default:
-                break;
-            }
-
-            using Movements = decltype(AIInputEvent::movement);
-            switch (inputEvent.movement)
-            {
-            case Movements::LEFT:
-                ecm.add<MovementEvent>(eId, Vector2{-1 * baseSpeedX, 0});
-                break;
-            case Movements::RIGHT:
-                ecm.add<MovementEvent>(eId, Vector2{baseSpeedX, 0});
-                break;
-            case Movements::DOWN:
-                ecm.add<MovementEvent>(eId, Vector2{0, baseSpeedY});
-                break;
-            case Movements::UP:
-                ecm.add<MovementEvent>(eId, Vector2{0, -1 * baseSpeedY});
-                break;
-            default:
-                break;
-            }
-        });
-    });
-}
-
 inline auto update(ECM &ecm)
 {
     movePlayer(ecm);
-    moveAI(ecm);
 
     return cleanup;
 };

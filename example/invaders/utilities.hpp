@@ -10,65 +10,6 @@
 
 namespace Utilties
 {
-inline void updateOutsideHiveAliens(ECM &ecm, const HiveComponent &hiveComp)
-{
-    auto [x, y, w, h] = hiveComp.bounds.box();
-    ecm.getAll<HiveAIComponent>().each([&](EId eId, auto &_) {
-        auto [aiX, aiY, aiW, aiH] = ecm.get<PositionComponent>(eId).peek(&PositionComponent::bounds).box();
-        if (aiX <= x)
-            ecm.add<LeftAlienComponent>(eId);
-        if (aiW >= w)
-            ecm.add<RightAlienComponent>(eId);
-    });
-}
-
-inline void updateOutsideHiveAliens(ECM &ecm, EId hiveId)
-{
-    ecm.get<HiveComponent>(hiveId).inspect(
-        [&](const HiveComponent &hiveComp) { updateOutsideHiveAliens(ecm, hiveComp); });
-}
-
-inline void updateHiveBounds(ECM &ecm, HiveComponent &hiveComp)
-{
-    PRINT("UPDATING HIVE BOUNDS")
-    constexpr int MIN_INT = std::numeric_limits<int>::min();
-    constexpr int MAX_INT = std::numeric_limits<int>::max();
-
-    Vector2 topLeft{MAX_INT, MAX_INT};
-    Vector2 bottomRight{MIN_INT, MIN_INT};
-
-    ecm.getAll<HiveAIComponent>().each([&](EId eId, auto &_) {
-        ecm.get<PositionComponent>(eId).inspect([&](const PositionComponent &posComp) {
-            auto [x, y, w, h] = posComp.bounds.box();
-            if (x < topLeft.x)
-                topLeft.x = x;
-            if (y < topLeft.y)
-                topLeft.y = y;
-            if (w > bottomRight.x)
-                bottomRight.x = w;
-            if (h > bottomRight.y)
-                bottomRight.y = h;
-        });
-    });
-
-    hiveComp.bounds = Bounds{topLeft, Vector2{bottomRight.x - topLeft.x, bottomRight.y - topLeft.y}};
-    updateOutsideHiveAliens(ecm, hiveComp);
-}
-
-inline void updateHiveBounds(ECM &ecm, EId hiveId)
-{
-    ecm.get<HiveComponent>(hiveId).inspect(
-        [&](const HiveComponent &hiveComp) { updateOutsideHiveAliens(ecm, hiveComp); });
-}
-
-inline void initHiveAI(ECM &ecm)
-{
-    auto [hiveId, hiveComps] = ecm.getUniqueEntity<HiveComponent>();
-    hiveComps.mutate([&](HiveComponent &hiveComp) { updateHiveBounds(ecm, hiveComp); });
-    using Movements = decltype(HiveMovementEffect::movement);
-    ecm.add<HiveMovementEffect>(hiveId, Movements::RIGHT);
-};
-
 inline void stageBuilder(ECM &ecm, const std::vector<std::string_view> &stage, ScreenConfig &screen)
 {
     int tileSize = screen.width / stage[0].size();
@@ -88,10 +29,10 @@ inline void stageBuilder(ECM &ecm, const std::vector<std::string_view> &stage, S
 
 inline void setup(ECM &ecm, ScreenConfig &screen)
 {
-    createGame(ecm, screen);
-    createHive(ecm);
+    Vector2 size{static_cast<float>(screen.width), static_cast<float>(screen.height)};
+    createGame(ecm, size);
+    createHive(ecm, size);
     stageBuilder(ecm, Stage1::stage, screen);
-    initHiveAI(ecm);
 };
 
 inline void updateDeltaTime(ECM &ecm, float delta)

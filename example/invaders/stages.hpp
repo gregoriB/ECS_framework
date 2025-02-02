@@ -12,8 +12,12 @@ inline std::function<EntityId(ECM &ecm, float, float, float, float)> getEntityCo
     {
     case 'P':
         return player;
-    case 'A':
-        return alien;
+    case 'S':
+        return hiveAlienSmall;
+    case 'M':
+        return hiveAlienMedium;
+    case 'L':
+        return hiveAlienLarge;
     }
 
     return NULL;
@@ -22,17 +26,16 @@ inline std::function<EntityId(ECM &ecm, float, float, float, float)> getEntityCo
 const std::vector<std::string_view> stage{
     "                            ",
     "                            ",
-    "    A A A A A A A A A A A   ", 
+    "    S S S S S S S S S S S   ", 
     "                            ",
-    "    A A A A A A A A A A A   ", 
+    "    M M M M M M M M M M M   ", 
     "                            ",
-    "    A A A A A A A A A A A   ",
+    "    M M M M M M M M M M M   ",
     "                            ",
-    "    A A A A A A A A A A A   ", 
+    "    L L L L L L L L L L L   ", 
     "                            ",
-    "    A A A A A A A A A A A   ", 
+    "    L L L L L L L L L L L   ", 
     "                            ",
-    "    A A A A A A A A A A A   ",
     "                            ", 
     "                            ", 
     "                            ",
@@ -62,7 +65,7 @@ const std::vector<std::string_view> testStage1{
 
 const std::vector<std::string_view> testStage2{
     "                            ", 
-    "                          R ", 
+    "                          S ", 
     "                            ",
     "                            ", 
     "                            ", 

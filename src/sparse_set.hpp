@@ -54,6 +54,11 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
         return m_isLocked;
     }
 
+    [[nodiscard]] const std::vector<Id> &getIds()
+    {
+        return m_ids;
+    }
+
     /**
      * @brief Basic each loop
      *

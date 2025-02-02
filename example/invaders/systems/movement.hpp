@@ -10,26 +10,6 @@ inline void cleanup(ECM &ecm)
 {
 }
 
-inline void handleHiveShift(ECM &ecm, auto &hiveMovementEffects)
-{
-    hiveMovementEffects.mutate([&](HiveMovementEffect &hiveMovementEffect) {
-        using Movements = decltype(HiveMovementEffect::movement);
-        switch (hiveMovementEffect.movement)
-        {
-        case Movements::LEFT:
-            hiveMovementEffect.movement = Movements::DOWN;
-            hiveMovementEffect.nextMove = Movements::RIGHT;
-            break;
-        case Movements::RIGHT:
-            hiveMovementEffect.movement = Movements::DOWN;
-            hiveMovementEffect.nextMove = Movements::LEFT;
-            break;
-        }
-
-        hiveMovementEffect.timer->stop();
-    });
-}
-
 inline auto checkOutOfBounds(const Bounds &countainer, const Bounds &subject)
 {
     auto [cX, cY, cW, cH] = countainer.box();
@@ -49,48 +29,6 @@ inline Bounds calculateNewBounds(auto &movementEvents, const PositionComponent &
     auto [pX, pY, pW, pH] = positionComp.bounds.get();
 
     return Bounds{pX + rX, pY + rY, pW, pH};
-}
-
-inline void updateHiveAIMovement(ECM &ecm, auto &hiveAiCompSet)
-{
-    bool isInBounds{true};
-
-    auto [hiveId, hiveMovementEffects] = ecm.getUniqueEntity<HiveMovementEffect>();
-    hiveAiCompSet.each([&](EId eId, auto &_) {
-        auto [movementEvents, positionComps] = ecm.gather<MovementEvent, PositionComponent>(eId);
-
-        bool isOutOfBounds = positionComps.check([&](const PositionComponent &positionComp) {
-            auto [gameId, gameComps] = ecm.getUniqueEntity<GameComponent>();
-            auto &gameBounds = gameComps.peek(&GameComponent::bounds);
-            auto newBounds = calculateNewBounds(movementEvents, positionComp);
-
-            return checkOutOfBounds(gameBounds, newBounds);
-        });
-
-        isInBounds = !isOutOfBounds;
-
-        return isOutOfBounds ? BREAK : CONTINUE;
-    });
-
-    if (!isInBounds)
-    {
-        handleHiveShift(ecm, hiveMovementEffects);
-        return;
-    }
-
-    auto movement = hiveMovementEffects.peek(&HiveMovementEffect::movement);
-    ecm.getAll<HiveAIComponent>().each([&](EId eId, auto &_) {
-        auto [movementEvents, positionComps] = ecm.gather<MovementEvent, PositionComponent>(eId);
-        if (!movementEvents)
-            return;
-
-        positionComps.inspect([&](const PositionComponent &positionComp) {
-            auto [newX, newY, w, h] = calculateNewBounds(movementEvents, positionComp).get();
-
-            ecm.add<CollisionCheckEvent>(eId, Bounds{newX, newY, w, h});
-            ecm.add<PositionEvent>(eId, Vector2{newX, newY});
-        });
-    });
 }
 
 inline void applyMovementEffects(ECM &ecm)
@@ -118,34 +56,11 @@ inline void applyMovementEffects(ECM &ecm)
     });
 }
 
-inline void updateHiveMovement(ECM &ecm)
-{
-    auto [hiveId, hiveMovementEffects] = ecm.getUniqueEntity<HiveMovementEffect>();
-    auto [leftAlienComps, rightAlienComps] = ecm.gatherAll<LeftAlienComponent, RightAlienComponent>();
-    if (!leftAlienComps || !rightAlienComps)
-        Utilties::updateHiveBounds(ecm, hiveId);
-
-    auto &currentMovement = hiveMovementEffects.peek(&HiveMovementEffect::movement);
-    using Movements = decltype(HiveMovementEffect::movement);
-    switch (currentMovement)
-    {
-    case Movements::LEFT:
-        updateHiveAIMovement(ecm, ecm.getAll<LeftAlienComponent>());
-        break;
-    case Movements::RIGHT:
-        updateHiveAIMovement(ecm, ecm.getAll<RightAlienComponent>());
-        break;
-    }
-}
-
 inline void updateOtherMovement(ECM &ecm)
 {
     ecm.getAll<MovementEvent>().each([&](EId eId, auto &movementEvents) {
-        auto [positionComps, projectileComps, playerComps, hiveAIComps] =
-            ecm.gather<PositionComponent, ProjectileComponent, PlayerComponent, HiveAIComponent>(eId);
-
-        if (hiveAIComps)
-            return;
+        auto [positionComps, projectileComps, playerComps] =
+            ecm.gather<PositionComponent, ProjectileComponent, PlayerComponent>(eId);
 
         positionComps.inspect([&](const PositionComponent &positionComp) {
             auto [gameId, gameComps] = ecm.getUniqueEntity<GameComponent>();
@@ -178,7 +93,6 @@ inline void updateOtherMovement(ECM &ecm)
 inline auto update(ECM &ecm)
 {
     applyMovementEffects(ecm);
-    updateHiveMovement(ecm);
     updateOtherMovement(ecm);
 
     return cleanup;

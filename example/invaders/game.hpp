@@ -55,7 +55,7 @@ class Game
     int loop()
     {
         int cycles{0};
-        int limit{200000};
+        int limit{20000000};
 
         std::cout << "\n $$$$$ STARTING GAME $$$$$ \n";
         bool quit{false};

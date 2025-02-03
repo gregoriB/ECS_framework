@@ -1,5 +1,7 @@
 #pragma once
 
+inline constexpr bool defaultComponentStacking = false;
+
 #include "tags.hpp"
 #include "utilities.hpp"
 
@@ -52,23 +54,22 @@ inline template <typename... Args> constexpr void debugWarningLog(const Args &..
 };
 
 #define PRINT(...) print(__VA_ARGS__);
-/* #define PRINT(...) ; */
 
-#ifdef game_show_game_data
+#ifdef ecs_show_game_data
 #define PRINT_GAME_DATA(...) print(__VA_ARGS__);
 #else
 #define PRINT_GAME_DATA(...) ;
 #endif
 
-#ifdef game_show_warnings
-#define GAME_LOG_WARNING(...) debugWarningPrint(__VA_ARGS__);
-#elif game_log_warnings
-#define GAME_LOG_WARNING(...) debugWarningLog(__VA_ARGS__);
+#ifdef ecs_show_warnings
+#define ECS_LOG_WARNING(...) debugWarningPrint(__VA_ARGS__);
+#elif ECS_LOG_WARNINGs
+#define ECS_LOG_WARNING(...) debugWarningLog(__VA_ARGS__);
 #else
-#define GAME_LOG_WARNING(...) ;
+#define ECS_LOG_WARNING(...) ;
 #endif
 
-#ifdef game_allow_debug
+#ifdef ecs_allow_debug
 #define PRINT_BENCHMARKS(...) benchmarkPrint(__VA_ARGS__);
 #else
 #define PRINT_BENCHMARKS(...) ;
@@ -81,13 +82,6 @@ enum class State
     NONE = 0,
     QUIT,
     RESET,
-};
-
-enum class SystemHealthCode
-{
-    NONE = 0,
-    GOOD,
-    BAD,
 };
 
 inline void withBenchmarks(std::function<float()> fn)
@@ -111,77 +105,4 @@ enum class Transformation
     DEFAULT,
     PRESERVE,
     TRANSFORM
-};
-
-enum class RootDirectory
-{
-    NONE = 0,
-    ASSETS,
-    ENGINE,
-    GAME,
-};
-
-enum class SubDirectory
-{
-    NONE = 0,
-    MAPS,
-    TEXTURES,
-    SPRITES,
-    SOUNDS,
-    MUSIC,
-    COMPONENTS,
-    SYSTEMS,
-    TESTS,
-};
-
-using AssetBytes = std::vector<std::byte>;
-
-struct AssetData
-{
-    enum class Grouping
-    {
-        NONE = 0,
-        INDIVIDUAL,
-        GROUPED,
-    };
-
-    AssetBytes bytes;
-    size_t hash;
-    Grouping grouping = Grouping::NONE;
-
-    AssetData()
-    {
-    }
-
-    AssetData(AssetBytes _bytes, size_t _hash, Grouping _grouping)
-        : bytes(_bytes), hash(_hash), grouping(_grouping)
-    {
-    }
-};
-
-inline bool preferTilesheet = true;
-
-enum class AnimationType
-{
-    NONE = 0,
-
-    ____begin_movement____,
-
-    IDLE,
-    RUN,
-    JUMP,
-    FALL,
-
-    ____end_movement____,
-    ____begin_effects____,
-
-    KNOCKBACK,
-
-    ____end_effects_____,
-    ____begin_cinematics____,
-
-    INTRO,
-    ROTATE,
-
-    ____end_cinematics____,
 };

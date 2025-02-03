@@ -32,7 +32,7 @@ template <typename Id, typename T> class BaseSparseSet
     }
 };
 
-template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Components<Tags::Component>>
+template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Components<DefaultComponent>>
 {
   public:
     template <typename EntityId> friend class EntityComponentManager;
@@ -47,11 +47,6 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
     explicit operator bool() const
     {
         return size() > 0;
-    }
-
-    [[nodiscard]] bool isLocked() const
-    {
-        return m_isLocked;
     }
 
     [[nodiscard]] const std::vector<Id> &getIds()
@@ -132,16 +127,31 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
         return contains(id) ? &(m_values[m_pointers[id]]) : nullptr;
     }
 
+    void lock()
+    {
+        m_isLocked = true;
+    }
+
+    void unlock()
+    {
+        m_isLocked = false;
+    }
+
+    [[nodiscard]] bool isLocked() const
+    {
+        return m_isLocked;
+    }
+
     void insert(Id id, T value)
     {
         if (isLocked())
         {
-            GAME_LOG_WARNING(typeid(T).name(), "is locked.  Cannot add to it");
+            ECS_LOG_WARNING(typeid(T).name(), "is locked.  Cannot add to it");
             return;
         }
         if (contains(id))
         {
-            GAME_LOG_WARNING(id, "Already contains", typeid(T).name(), "Add failed");
+            ECS_LOG_WARNING(id, "Already contains", typeid(T).name(), "Add failed");
             return;
         }
 
@@ -164,12 +174,12 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
     {
         if (isLocked())
         {
-            GAME_LOG_WARNING(typeid(T).name(), "is locked.  Cannot add to it");
+            ECS_LOG_WARNING(typeid(T).name(), "is locked.  Cannot add to it");
             return nullptr;
         }
         if (contains(id))
         {
-            GAME_LOG_WARNING(id, "Already contains", typeid(T).name(), "Add failed");
+            ECS_LOG_WARNING(id, "Already contains", typeid(T).name(), "Add failed");
             return nullptr;
         }
 
@@ -191,7 +201,7 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
     {
         if (!contains(id))
         {
-            GAME_LOG_WARNING(id, "does not contain", typeid(T).name(), "Overwrite failed");
+            ECS_LOG_WARNING(id, "does not contain", typeid(T).name(), "Overwrite failed");
             return;
         }
 
@@ -200,14 +210,8 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
 
     void erase(Id id1) override
     {
-        if (isLocked())
-        {
-            /* GAME_LOG_WARNING(typeid(T).name(), "is locked.  Cannot add or remove"); */
-            return;
-        }
         if (!contains(id1))
         {
-            /* GAME_LOG_WARNING(typeid(T).name(), "not found for:", id1, ". Cannot remove"); */
             return;
         }
 
@@ -228,11 +232,6 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
     [[nodiscard]] bool contains(Id id)
     {
         return id < m_pointers.size() && m_pointers[id] != -1;
-    }
-
-    void lock()
-    {
-        m_isLocked = true;
     }
 
   private:

@@ -5,12 +5,12 @@
 #include <optional>
 #include <ostream>
 
-template <typename T> [[nodiscard]] auto getTypeName()
+template <typename T> [[nodiscard]] std::string getTypeName()
 {
     return typeid(T).name();
 }
 
-template <typename T, typename Base> [[nodiscard]] bool isBase()
+template <typename T, typename Base> [[nodiscard]] constexpr bool isBase()
 {
     if (std::is_base_of_v<Base, T>)
         return true;

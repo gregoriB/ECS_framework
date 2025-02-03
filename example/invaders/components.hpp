@@ -3,8 +3,8 @@
 #include "core.hpp"
 #include "renderer.hpp"
 
-using Unique = Tags::Unique;
-using Stacked = Tags::Component;
+using NoStack = Tags::NoStack;
+using Stack = Tags::Stack;
 using Event = Tags::Event;
 using Effect = Tags::Effect;
 
@@ -24,27 +24,28 @@ enum class Actions
     QUIT,
 };
 
-struct PlayerComponent : Unique
+struct PlayerComponent
 {
 };
 
-struct AIComponent : Unique
+struct AIComponent
 {
 };
 
-struct LeftAlienComponent : Unique
-{
-};
-struct RightAlienComponent : Unique
+struct LeftAlienComponent : Stack
 {
 };
 
-struct HiveComponent : Unique
+struct RightAlienComponent : Stack
+{
+};
+
+struct HiveComponent
 {
     Bounds bounds{};
 };
 
-struct HiveAIComponent : Unique
+struct HiveAIComponent
 {
     EntityId hiveId;
 
@@ -109,7 +110,7 @@ struct MovementEffect : Effect
     }
 };
 
-struct MovementComponent : Unique
+struct MovementComponent
 {
     Vector2 speeds;
 
@@ -133,7 +134,7 @@ struct MovementEvent : Event
     }
 };
 
-struct PositionComponent : Unique
+struct PositionComponent
 {
     Bounds bounds;
 
@@ -151,7 +152,7 @@ struct PositionEvent : Event
     }
 };
 
-struct CollisionCheckEvent : Event
+struct CollisionCheckEvent : Event, NoStack
 {
     Bounds bounds;
 
@@ -169,11 +170,11 @@ struct DeathEvent : Event
     }
 };
 
-struct DeathComponent : Unique
+struct DeathComponent
 {
 };
 
-struct DamageComponent : Unique
+struct DamageComponent
 {
     float amount;
 
@@ -182,7 +183,7 @@ struct DamageComponent : Unique
     }
 };
 
-struct AttackComponent : Unique
+struct AttackComponent
 {
     Movements direction;
 
@@ -204,7 +205,7 @@ struct AttackEffect : Effect
     }
 };
 
-struct GameComponent : Unique
+struct GameComponent
 {
     Bounds bounds;
     bool isGameOver{};
@@ -215,7 +216,7 @@ struct GameComponent : Unique
     }
 };
 
-struct GameMetaComponent : Unique
+struct GameMetaComponent
 {
     Vector2 screen;
     float deltaTime{};
@@ -241,7 +242,7 @@ struct GameEvent : Event
     }
 };
 
-struct SpriteComponent : Unique
+struct SpriteComponent
 {
     Renderer::RGBA rgba;
 
@@ -250,7 +251,7 @@ struct SpriteComponent : Unique
     }
 };
 
-struct ProjectileComponent : Unique
+struct ProjectileComponent
 {
     Movements movement;
 
@@ -259,7 +260,7 @@ struct ProjectileComponent : Unique
     }
 };
 
-struct PointsComponent : Unique
+struct PointsComponent
 {
     int points;
     int multiplier{1};

@@ -18,34 +18,215 @@ inline std::function<EntityId(ECM &ecm, float, float, float, float)> getEntityCo
         return hiveAlienMedium;
     case 'L':
         return hiveAlienLarge;
+    case 'H':
+        return hive;
+    case '@':
+        return redBlock;
+    case '#':
+        return greenBlock;
     }
 
     return NULL;
 };
 
 const std::vector<std::string_view> stage1{
-    "                            ",
-    "                            ",
-    "    S S S S S S S S S S S   ", 
-    "                            ",
-    "    M M M M M M M M M M M   ", 
-    "                            ",
-    "    M M M M M M M M M M M   ",
-    "                            ",
-    "    L L L L L L L L L L L   ", 
-    "                            ",
-    "    L L L L L L L L L L L   ", 
-    "                            ",
-    "                            ", 
-    "                            ", 
-    "                            ",
-    "                            ", 
-    "                            ",
-    "                            ",
-    "             P              ", 
-    "                            ",
-    "                            ",
-    "                            ",
+    "  H                           ",
+    "                              ",
+    "     S S S S S S S S S S S    ", 
+    "                              ",
+    "     M M M M M M M M M M M    ", 
+    "                              ",
+    "     M M M M M M M M M M M    ",
+    "                              ",
+    "     L L L L L L L L L L L    ", 
+    "                              ",
+    "     L L L L L L L L L L L    ", 
+    "                              ",
+    "                              ", 
+    "                              ", 
+    "                              ", 
+    "                              ", 
+    "                              ",
+    "  ####    ####   ####   ####  ", 
+    "  #  #    #  #   #  #   #  #  ",
+    "                              ",
+    "               P              ", 
+    "                              ",
+};
+
+const std::vector<std::string_view> stage2{
+    " H                            ",
+    "                              ",
+    "                              ",
+    "     S S S S S S S S S S S    ", 
+    "                              ",
+    "     M M M M M M M M M M M    ", 
+    "                              ",
+    "     M M M M M M M M M M M    ",
+    "                              ",
+    "     L L L L L L L L L L L    ", 
+    "                              ",
+    "     L L L L L L L L L L L    ", 
+    "                              ", 
+    "                              ", 
+    "                              ", 
+    "                              ", 
+    "                              ",
+    "  ####    ####   ####   ####  ", 
+    "  #  #    #  #   #  #   #  #  ",
+    "                              ",
+    "                              ", 
+    "                              ",
+};
+
+const std::vector<std::string_view> stage3{
+    " H                            ",
+    "                              ",
+    "                              ",
+    "                              ",
+    "     S S S S S S S S S S S    ", 
+    "                              ",
+    "     M M M M M M M M M M M    ", 
+    "                              ",
+    "     M M M M M M M M M M M    ",
+    "                              ",
+    "     L L L L L L L L L L L    ", 
+    "                              ",
+    "     L L L L L L L L L L L    ", 
+    "                              ", 
+    "                              ", 
+    "                              ", 
+    "                              ", 
+    "  ####    ####   ####   ####  ", 
+    "  #  #    #  #   #  #   #  #  ",
+    "                              ",
+    "                              ", 
+    "                              ",
+};
+
+const std::vector<std::string_view> stage4{
+    " H                            ",
+    "                              ",
+    "                              ",
+    "                              ",
+    "                              ",
+    "     S S S S S S S S S S S    ", 
+    "                              ",
+    "     M M M M M M M M M M M    ", 
+    "                              ",
+    "     M M M M M M M M M M M    ",
+    "                              ",
+    "     L L L L L L L L L L L    ", 
+    "                              ",
+    "     L L L L L L L L L L L    ", 
+    "                              ", 
+    "                              ", 
+    "                              ", 
+    "  ####    ####   ####   ####  ", 
+    "  #  #    #  #   #  #   #  #  ",
+    "                              ",
+    "                              ", 
+    "                              ",
+};
+
+const std::vector<std::string_view> stage5{
+    " H                            ",
+    "                              ",
+    "                              ",
+    "                              ",
+    "                              ",
+    "                              ",
+    "     S S S S S S S S S S S    ", 
+    "                              ",
+    "     M M M M M M M M M M M    ", 
+    "                              ",
+    "     M M M M M M M M M M M    ",
+    "                              ",
+    "     L L L L L L L L L L L    ", 
+    "                              ",
+    "     L L L L L L L L L L L    ", 
+    "                              ", 
+    "                              ",
+    "  ####    ####   ####   ####  ", 
+    "  #  #    #  #   #  #   #  #  ",
+    "                              ",
+    "                              ", 
+    "                              ",
+};
+
+const std::vector<std::string_view> stage6{
+    " H                            ",
+    "                              ",
+    "                              ",
+    "                              ",
+    "                              ",
+    "                              ",
+    "                              ",
+    "     S S S S S S S S S S S    ", 
+    "                              ",
+    "     M M M M M M M M M M M    ", 
+    "                              ",
+    "     M M M M M M M M M M M    ",
+    "                              ",
+    "     L L L L L L L L L L L    ", 
+    "                              ",
+    "     L L L L L L L L L L L    ", 
+    "                              ",
+    "  ####    ####   ####   ####  ", 
+    "  #  #    #  #   #  #   #  #  ",
+    "                              ",
+    "                              ", 
+    "                              ",
+};
+
+const std::vector<std::string_view> stage7{
+    " H                            ",
+    "                              ",
+    "                              ",
+    "                              ",
+    "                              ",
+    "                              ",
+    "                              ",
+    "                              ",
+    "     S S S S S S S S S S S    ", 
+    "                              ",
+    "     M M M M M M M M M M M    ", 
+    "                              ",
+    "     M M M M M M M M M M M    ",
+    "                              ",
+    "     L L L L L L L L L L L    ", 
+    "                              ",
+    "     L L L L L L L L L L L    ", 
+    "                              ",
+    "                              ", 
+    "                              ",
+    "                              ",
+    "                              ",
+};
+
+const std::vector<std::string_view> stage8{
+    " H                             ",
+    "                               ",
+    "                               ",
+    "                               ",
+    "                               ",
+    "                               ",
+    "                               ",
+    "                               ",
+    "                               ",
+    "     S S S S S S S S S S S     ", 
+    "                               ",
+    "     M M M M M M M M M M M     ", 
+    "                               ",
+    "     M M M M M M M M M M M     ",
+    "                               ",
+    "     L L L L L L L L L L L     ", 
+    "                               ",
+    "     L L L L L L L L L L L     ", 
+    "                               ", 
+    "                               ",
+    "                               ",
+    "                               ",
 };
 
 const std::vector<std::string_view> testStage1{
@@ -64,18 +245,53 @@ const std::vector<std::string_view> testStage1{
 };
 
 const std::vector<std::string_view> testStage2{
-    "                            ", 
+    " H                          ",
+    "                            ",
     "                          S ", 
     "                            ",
     "                            ", 
+    "                            ",
+    "                            ",
+    "                            ",
     "                            ", 
+    "                            ",
+    "                            ", 
+    "                            ",
+    "                            ", 
+    "                            ", 
+    "                            ",
+    "                            ", 
+    "                            ",
     "                            ",
     "             P              ", 
-    "                            ", 
     "                            ",
-    "                            ", 
-    "                            ", 
     "                            ",
+    "                            ",
+};
+
+const std::vector<std::string_view> gameOver{
+    "                              ",
+    "                              ",
+    "    @@@@@ @@@@@ @   @ @@@@    ",
+    "    @     @   @ @@ @@ @       ",
+    "    @ @@@ @@@@@ @ @ @ @@@     ", 
+    "    @   @ @   @ @   @ @       ",
+    "    @@@@@ @   @ @   @ @@@@    ", 
+    "                              ",
+    "    @@@@@ @   @ @@@@@ @@@@    ", 
+    "    @   @ @   @ @     @   @   ", 
+    "    @   @  @ @  @@@@  @@@@    ",
+    "    @   @  @ @  @     @@@     ", 
+    "    @@@@@   @   @@@@@ @  @    ",
+    "                              ",
+    "                              ", 
+    "                              ",
+    "                              ",
+    "                              ",
+    "                              ",
+    "                              ",
+    "                              ",
+    "                              ",
 };
 
 inline std::vector<std::string_view> getStage(int stage)
@@ -84,8 +300,16 @@ inline std::vector<std::string_view> getStage(int stage)
    {
     case 1:
         return stage1;
+    case 2:
+        return stage2;
+    case 3:
+        return stage3;
+    case 4:
+        return stage4;
+    case 5:
+        return stage5;
     default:
-        return stage1;
+        return gameOver;
    }
 }
 

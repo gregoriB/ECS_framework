@@ -1,66 +1,47 @@
 #pragma once
 
+#include "core.hpp"
 #include "timer.hpp"
 #include "utilities.hpp"
 
 namespace Tags
 {
 
-struct Component
+struct Stack
+{
+};
+struct Event
+{
+};
+struct NoStack
+{
+};
+struct Transform
 {
 };
 
-struct Event : public Component
-{
-};
-struct Unique : public Component
-{
-};
-struct Transform : public Component
-{
-};
-
-using Stacked = Component;
-
-struct Timed : public Component
-{
-    std::optional<Timer> timer;
-
-    Timed()
-    {
-    }
-
-    Timed(float _seconds) : timer{_seconds}
-    {
-    }
-};
-
-struct Effect : public Timed
+struct Effect
 {
     bool cleanup{false};
+    std::optional<Timer> timer;
 
     Effect()
     {
     }
 
-    Effect(float _duration) : Timed(_duration)
+    Effect(float _duration) : timer{_duration}
     {
     }
 };
-
-template <typename T> bool constexpr isComponent()
-{
-    return isBase<T, Component>();
-}
 
 template <typename T> bool constexpr isTransform()
 {
     return isBase<T, Transform>();
 }
 
-template <typename T> constexpr bool isUnique()
+template <typename T> constexpr bool isNotStacked()
 {
-    return isBase<T, Unique>();
+    return isBase<T, NoStack>();
 }
 
 template <typename T> constexpr bool isEvent()
@@ -73,9 +54,23 @@ template <typename T> constexpr bool isEffect()
     return isBase<T, Effect>();
 }
 
+constexpr bool shouldDefaultToStack()
+{
+    return defaultComponentStacking;
+}
+
 template <typename T> constexpr bool isStacked()
 {
-    return !isUnique<T>();
+    if (isNotStacked<T>())
+        return false;
+
+    if (isEvent<T>())
+        return true;
+
+    if (isBase<T, Stack>())
+        return true;
+
+    return shouldDefaultToStack();
 }
 
 } // namespace Tags

@@ -3,6 +3,8 @@
 #include "components.hpp"
 #include "core.hpp"
 #include "sparse_set.hpp"
+#include "tags.hpp"
+#include "utilities.hpp"
 #include <stdexcept>
 
 template <typename EntityId> class EntityComponentManager
@@ -11,20 +13,20 @@ template <typename EntityId> class EntityComponentManager
     template <typename T> using ComponentSet = SparseSet<EntityId, Components<T>>;
     template <typename T> using ComponentSetMap = std::unordered_map<size_t, std::unique_ptr<T>>;
 
-    using ErasedComponent = Components<Tags::Component>;
+    using ErasedComponent = Components<DefaultComponent>;
     using ErasedComponentSet = BaseSparseSet<EntityId, ErasedComponent>;
 
     using StoredComponents = ComponentSetMap<ErasedComponentSet>;
     using StoredTags = std::unordered_map<size_t, std::unordered_set<size_t>>;
 
     template <typename T> using TransformationFn = std::function<T(EntityId, T)>;
-    using StoredTransformationFn = std::function<Tags::Component(EntityId, Tags::Component &)>;
+    using StoredTransformationFn = std::function<DefaultComponent(EntityId, DefaultComponent &)>;
     using StoredTransformationFnMap = std::unordered_map<size_t, StoredTransformationFn>;
 
   public:
     // TODO Task : Move default value to configurable file or a compiler flag
     size_t m_standardSetSize = 10024;
-    size_t m_minSetSize = 0;
+    size_t m_minSetSize = 100;
 
   public:
     EntityComponentManager()
@@ -50,9 +52,36 @@ template <typename EntityId> class EntityComponentManager
         addComponent<T>(eId, args...);
     }
 
+    template <typename T, typename... Args> void addUnique(EntityId eId, Args... args)
+    {
+        addComponent<T>(eId, args...);
+        getComponentSet<T>(m_minSetSize).lock();
+    }
+
+    template <typename T, typename... Args> void overwriteUnique(EntityId eId, Args... args)
+    {
+        auto [uniqueId, _] = getUnique<T>();
+
+        if (eId != uniqueId)
+            throw std::runtime_error("Enitty ID: " + std::to_string(eId) +
+                                     " is not owning entity for unique component: " + getTypeName<T>());
+
+        auto &cSet = getComponentSet<T>();
+        if (!cSet.isLocked())
+            throw std::runtime_error(getTypeName<T>() + " is not unique!");
+
+        overwriteComponent<T>(eId, cSet, args...);
+    }
+
     template <typename T, typename... Args> void overwrite(EntityId eId, Args... args)
     {
-        overwriteComponent<T>(eId, args...);
+        auto &cSet = getComponentSet<T>();
+        if (cSet.isLocked())
+            throw std::runtime_error(
+                getTypeName<T>() +
+                " is unique. Cannot overwrite. Use `overwriteUnique` to overwrite a unique component");
+
+        overwriteComponent<T>(eId, cSet, args...);
     }
 
     /**
@@ -90,22 +119,27 @@ template <typename EntityId> class EntityComponentManager
      *
      * @return Entity Id
      */
-    template <typename T> [[nodiscard]] std::pair<EntityId, Components<T> &> getUniqueEntity()
+    template <typename T> [[nodiscard]] std::pair<EntityId, Components<T> &> getUnique()
     {
-        EntityId id{0};
         auto &cSet = getComponentSet<T>(m_minSetSize);
+        if (!cSet.size())
+            throw std::runtime_error(getTypeName<T>() + " unique component set does not exist!");
+
+        if (!cSet.isLocked())
+            throw std::runtime_error(getTypeName<T>() + " is not unique!");
+
+        EntityId id{0};
         Components<T> *compsPtr = nullptr;
         cSet.each([&](EntityId eId, auto &comps) {
-            id = eId;
-            compsPtr = &comps;
-            return false;
+            if (id == 0)
+            {
+                id = eId;
+                compsPtr = &comps;
+            }
+            // Should not break the loop after the first element
+            // because auto-pruning will clean up dummy components
+            // as it iterates over them
         });
-
-        if (cSet.size() > 1 || !id || compsPtr == nullptr)
-        {
-            GAME_LOG_WARNING(typeid(T).name(), "Is not a unique entity!")
-            std::runtime_error("Entity is not unique!");
-        }
 
         return {id, *compsPtr};
     }
@@ -125,18 +159,7 @@ template <typename EntityId> class EntityComponentManager
         return {getComponentSet<T>(m_minSetSize)...};
     }
 
-    /*
-     * Locking a set ensures entity-components cannot be added or removed.
-     * Useful for entities that have a unique component, such as a game entity
-     * having a game state component, to prevent weird bugs if a duplicate
-     * entity gets accidentally created.
-     */
-    template <typename T> void lockSet()
-    {
-        getComponentSet<T>().lock();
-    }
-
-    template <typename T> [[nodiscard]] bool isLocked() const
+    template <typename T> [[nodiscard]] bool isUnique() const
     {
         return getComponentSet<T>().isLocked();
     }
@@ -326,8 +349,17 @@ template <typename EntityId> class EntityComponentManager
         auto comps = cSet.get(eId);
         if (!comps)
         {
+
             Components<T> dummy{ComponentFlags::EMPTY};
-            cSet.insert(eId, std::move(dummy));
+            if (cSet.isLocked())
+            {
+                cSet.unlock();
+                cSet.insert(eId, std::move(dummy));
+                cSet.lock();
+            }
+            else
+                cSet.insert(eId, std::move(dummy));
+
             comps = cSet.get(eId);
         }
 
@@ -337,6 +369,9 @@ template <typename EntityId> class EntityComponentManager
     template <typename T, typename... Args> void addComponent(EntityId eId, Args... args)
     {
         ComponentSet<T> &cSet = getComponentSet<T>();
+        if (cSet.isLocked())
+            throw std::runtime_error("Attempt to add to a unique component set for " + getTypeName<T>());
+
         auto comps = cSet.get(eId);
         if (!comps)
         {
@@ -350,7 +385,7 @@ template <typename EntityId> class EntityComponentManager
 
         if (!Tags::isStacked<T>() && comps->size() >= 1)
         {
-            GAME_LOG_WARNING(eId, "Already contains a unique", typeid(T).name(), "Add failed");
+            ECS_LOG_WARNING(eId, "Already contains a unique", getTypeName<T>(), "Add failed");
 
             return;
         }
@@ -359,13 +394,13 @@ template <typename EntityId> class EntityComponentManager
         setTransformer(eId, *comps);
     }
 
-    template <typename T, typename... Args> void overwriteComponent(EntityId eId, Args... args)
+    template <typename T, typename... Args>
+    void overwriteComponent(EntityId eId, ComponentSet<T> &cSet, Args... args)
     {
-        auto &cSet = getComponentSet<T>();
         auto comps = cSet.get(eId);
         if (!comps)
         {
-            GAME_LOG_WARNING(eId, "does not contain", typeid(T).name(), "Overwrite failed");
+            ECS_LOG_WARNING(eId, "does not contain", getTypeName<T>(), "Overwrite failed");
             return;
         }
 
@@ -454,7 +489,7 @@ template <typename EntityId> class EntityComponentManager
         return {
             Tags::isEvent<T>() ? typeid(Tags::Event).hash_code() : 0,
             Tags::isEffect<T>() ? typeid(Tags::Effect).hash_code() : 0,
-            Tags::isUnique<T>() ? typeid(Tags::Unique).hash_code() : 0,
+            Tags::isNotStacked<T>() ? typeid(Tags::NoStack).hash_code() : 0,
             Tags::isTransform<T>() ? typeid(Tags::Transform).hash_code() : 0,
         };
     }
@@ -467,8 +502,8 @@ template <typename EntityId> class EntityComponentManager
         auto casted = dynamic_cast<ComponentSet<T> *>(&getSetFromIterator(iter));
         if (!casted)
         {
-            auto errorMessage = std::string(typeid(T).name()) + " Failed dynamic_cast!";
-            GAME_LOG_WARNING(errorMessage);
+            auto errorMessage = getTypeName<T>() + " Failed dynamic_cast!";
+            ECS_LOG_WARNING(errorMessage);
             throw std::runtime_error(errorMessage);
         }
         return *casted;

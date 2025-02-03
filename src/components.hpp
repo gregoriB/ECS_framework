@@ -1,6 +1,8 @@
 #pragma once
 
 #include "core.hpp"
+#include "tags.hpp"
+#include "utilities.hpp"
 
 template <typename T> using Transformer = std::function<T(T &)>;
 
@@ -9,7 +11,7 @@ enum class Arrangement
     EMPTY,
     TRANSFORMED,
     MODIFIED,
-    UNIQUE,
+    NOT_STACKED,
     STACKED,
 };
 
@@ -17,6 +19,10 @@ enum class ComponentFlags
 {
     NONE = 0,
     EMPTY,
+};
+
+struct DefaultComponent
+{
 };
 
 template <typename T> class ComponentIterator
@@ -43,7 +49,7 @@ template <typename T> class ComponentIterator
             m_modifiedIter = _iter;
             break;
         default:
-            GAME_LOG_WARNING("Arrangement not found for", getTypeName<T>(), "!")
+            ECS_LOG_WARNING("Arrangement not found for", getTypeName<T>(), "!")
         }
     }
     ComponentIterator(std::vector<T>::iterator _iter, Arrangement _arrangement)
@@ -59,7 +65,7 @@ template <typename T> class ComponentIterator
             m_componentsIter = _iter;
             break;
         default:
-            GAME_LOG_WARNING("Arrangement not found for", getTypeName<T>(), "!")
+            ECS_LOG_WARNING("Arrangement not found for", getTypeName<T>(), "!")
         }
     }
     ComponentIterator(T *_component) : m_component(_component), isComponent(true)
@@ -80,7 +86,7 @@ template <typename T> class ComponentIterator
         if (isComponents)
             return (*m_componentsIter);
 
-        GAME_LOG_WARNING("Something has gone wrong if you've reached this point!")
+        ECS_LOG_WARNING("Something has gone wrong if you've reached this point!")
         return *m_component;
     }
 
@@ -115,7 +121,7 @@ template <typename T> class ComponentIterator
         if (isComponents)
             return m_componentsIter == other.m_componentsIter;
 
-        GAME_LOG_WARNING("Something went wrong if you reached this point!")
+        ECS_LOG_WARNING("Something went wrong if you reached this point!")
         return m_component == other.m_component;
     }
 
@@ -147,7 +153,7 @@ template <typename T> class Components
             return Iterator(transformed().begin(), Arrangement::TRANSFORMED);
         case Arrangement::MODIFIED:
             return Iterator(modified().begin(), Arrangement::MODIFIED);
-        case Arrangement::UNIQUE:
+        case Arrangement::NOT_STACKED:
             return Iterator(component());
         case Arrangement::STACKED:
             return Iterator(components().begin(), Arrangement::STACKED);
@@ -167,7 +173,7 @@ template <typename T> class Components
             return Iterator(transformed().end(), Arrangement::TRANSFORMED);
         case Arrangement::MODIFIED:
             return Iterator(modified().end(), Arrangement::MODIFIED);
-        case Arrangement::UNIQUE:
+        case Arrangement::NOT_STACKED:
             return Iterator(nullptr);
         case Arrangement::STACKED:
             return Iterator(components().end(), Arrangement::STACKED);
@@ -277,7 +283,9 @@ template <typename T> class Components
     }
 
     /**
-     * @brief Extract a value as readonly.  THROWS AN ERROR IF THE COMPONENT IS EMPTY!
+     * @brief Extract a value as readonly FROM A NON-STACKED COMPONENT.
+     *
+     * THROWS A RUNTIME ERROR IF THE COMPONENT IS EMPTY!
      *
      * @param T::Prop
      * @param Transformation pipeline behavior
@@ -286,20 +294,20 @@ template <typename T> class Components
      */
     template <typename Prop>
     [[nodiscard]] const Prop &peek(Prop T::*prop, Transformation behavior = Transformation::DEFAULT)
+        requires(!Tags::isStacked<T>())
     {
+        static_assert(!Tags::isStacked<T>(), "Cannot use peek method with a stacked component");
+
         if (isEmpty())
         {
-            GAME_LOG_WARNING("Property:", getTypeName<decltype(prop)>(),
-                             "could not be peeked from Component:", getTypeName<T>())
-            throw std::runtime_error("Component is Empty");
+            throw std::runtime_error("Property: " + getTypeName<decltype(prop)>() +
+                                     " could not be peeked from Component: " + getTypeName<T>());
         }
 
         handleTransformations(behavior);
 
         for (auto &comp : *this)
             return comp.*prop;
-
-        throw std::runtime_error("Component is Empty");
     }
 
     /**
@@ -312,10 +320,11 @@ template <typename T> class Components
      */
     template <typename Func>
     [[nodiscard]] bool check(Func &&fn, Transformation behavior = Transformation::DEFAULT)
-        requires std::invocable<Func, const T &>
+        requires(std::invocable<Func, const T &> && !Tags::isStacked<T>())
     {
         static_assert(std::is_convertible_v<std::invoke_result_t<Func, const T &>, bool>,
                       "Check function must return bool.");
+        static_assert(!Tags::isStacked<T>(), "Cannot use check methods with a stacked component");
 
         if (isEmpty())
             return false;
@@ -734,7 +743,7 @@ template <typename T> class Components
             return Arrangement::MODIFIED;
 
         if (isComponent())
-            return Arrangement::UNIQUE;
+            return Arrangement::NOT_STACKED;
 
         if (isComponents())
             return Arrangement::STACKED;

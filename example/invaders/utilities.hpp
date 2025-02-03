@@ -12,7 +12,7 @@ namespace Utilties
 {
 inline void stageBuilder(ECM &ecm, const std::vector<std::string_view> &stage)
 {
-    auto [_, gameMetaComps] = ecm.getUniqueEntity<GameMetaComponent>();
+    auto [_, gameMetaComps] = ecm.getUnique<GameMetaComponent>();
     auto &screen = gameMetaComps.peek(&GameMetaComponent::screen);
     int tileSize = screen.x / stage[0].size();
 
@@ -34,31 +34,30 @@ inline void setup(ECM &ecm, ScreenConfig &screen)
     Vector2 size{static_cast<float>(screen.width), static_cast<float>(screen.height)};
     createGame(ecm, size);
 
-    createHive(ecm);
     stageBuilder(ecm, Stages::getStage(1));
 };
 
 inline void nextStage(ECM &ecm, int stage)
 {
-    createHive(ecm);
+    ecm.clear<HiveMovementEffect>();
     stageBuilder(ecm, Stages::getStage(stage));
 };
 
 inline void updateDeltaTime(ECM &ecm, float delta)
 {
-    auto [gameId, gameMetaComps] = ecm.getUniqueEntity<GameMetaComponent>();
+    auto [gameId, gameMetaComps] = ecm.getUnique<GameMetaComponent>();
     gameMetaComps.mutate([&](GameMetaComponent &gameMetaComp) { gameMetaComp.deltaTime = delta; });
 };
 
 inline float getDeltaTime(ECM &ecm)
 {
-    auto [gameId, gameMetaComps] = ecm.getUniqueEntity<GameMetaComponent>();
+    auto [gameId, gameMetaComps] = ecm.getUnique<GameMetaComponent>();
     return gameMetaComps.peek(&GameMetaComponent::deltaTime);
 };
 
 inline void registerPlayerInputs(ECM &ecm, std::vector<Inputs> &inputs)
 {
-    auto [playerId, _] = ecm.getUniqueEntity<PlayerComponent>();
+    auto [playerId, _] = ecm.getUnique<PlayerComponent>();
     using Movements = decltype(PlayerInputEvent::movement);
     using Actions = decltype(PlayerInputEvent::action);
     for (const auto &input : inputs)
@@ -117,7 +116,7 @@ inline void registerAIInputs(ECM &ecm, EId eId, std::vector<Inputs> &inputs)
 
 inline bool getGameoverState(ECM &ecm)
 {
-    auto [gameId, gameComps] = ecm.getUniqueEntity<GameComponent>();
+    auto [gameId, gameComps] = ecm.getUnique<GameComponent>();
     return gameComps.peek(&GameComponent::isGameOver);
 };
 

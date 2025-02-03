@@ -24,7 +24,7 @@ inline void movePlayer(ECM &ecm)
                 ecm.add<AttackEvent>(eId);
                 break;
             case Actions::QUIT: {
-                auto [gameId, _] = ecm.getUniqueEntity<GameComponent>();
+                auto [gameId, _] = ecm.getUnique<GameComponent>();
                 ecm.add<GameEvent>(gameId, GameEvents::QUIT);
                 break;
             }

@@ -15,7 +15,6 @@ inline void updateOutsideHiveAliens(ECM &ecm, EId hiveId, const HiveComponent &h
     auto &ids = ecm.getEntityIds<HiveAIComponent>();
     if (ids.empty())
     {
-        ecm.clearByEntity<HiveMovementEffect>(hiveId);
         ecm.add<GameEvent>(hiveId, GameEvents::NEXT_STAGE);
         return;
     }
@@ -102,7 +101,7 @@ template <typename Movement> inline Vector2 calculateSpeed(const Vector2 &speed,
 
 template <typename Movement> inline bool checkIsOutOfBounds(ECM &ecm, EId hiveId, Movement &movement)
 {
-    auto [gameId, gameComps] = ecm.getUniqueEntity<GameComponent>();
+    auto [gameId, gameComps] = ecm.getUnique<GameComponent>();
     auto &hiveSpeeds = ecm.get<MovementComponent>(hiveId).peek(&MovementComponent::speeds);
 
     auto &hiveAiIds = movement == Movement::LEFT ? ecm.getEntityIds<LeftAlienComponent>()
@@ -150,6 +149,10 @@ inline void moveHiveAI(ECM &ecm, EId hiveId, auto &hiveMovementEffects)
 {
     auto movement = hiveMovementEffects.peek(&HiveMovementEffect::movement);
     auto &speeds = ecm.get<MovementComponent>(hiveId).peek(&MovementComponent::speeds);
+    auto &allHiveAiIds = ecm.getEntityIds<HiveAIComponent>();
+    if (!allHiveAiIds.size())
+        return;
+
     auto newSpeed = calculateSpeed(speeds, movement);
     if (!newSpeed.x && !newSpeed.y)
         return;
@@ -161,11 +164,21 @@ inline void moveHiveAI(ECM &ecm, EId hiveId, auto &hiveMovementEffects)
 inline void updateHiveMovement(ECM &ecm, EId hiveId, auto &hiveMovementEffects)
 {
     hiveMovementEffects.mutate([&](HiveMovementEffect &hiveMovementEffect) {
+        auto &allHiveAiIds = ecm.getEntityIds<HiveAIComponent>();
+        auto hiveAICount = allHiveAiIds.size();
+        if (!hiveAICount)
+            return;
+
         using Movement = decltype(HiveMovementEffect::movement);
         if (hiveMovementEffect.movement == Movement::DOWN)
             hiveMovementEffect.movement = hiveMovementEffect.nextMove;
 
-        hiveMovementEffect.timer->restart();
+        float hiveTotal = 55.0f;
+        float diff = hiveTotal - hiveAICount;
+        diff = diff > 0 ? diff : 1.0f;
+        float interval = 0.5f / (diff / 2);
+
+        hiveMovementEffect.timer->update(interval);
     });
 }
 
@@ -177,15 +190,17 @@ inline bool checkShouldHiveAIMove(Components<HiveMovementEffect> &hiveMovementEf
 
 inline void updateHive(ECM &ecm)
 {
-    auto [hiveId, hiveMovementEffects] = ecm.getUniqueEntity<HiveMovementEffect>();
-    if (checkHiveOutOfBounds(ecm, hiveId, hiveMovementEffects))
-        handleHiveShift(ecm, hiveMovementEffects);
+    ecm.getAll<HiveMovementEffect>().each([&](EId hiveId, auto &hiveMovementEffects) {
+        ;
+        if (checkHiveOutOfBounds(ecm, hiveId, hiveMovementEffects))
+            handleHiveShift(ecm, hiveMovementEffects);
 
-    if (checkShouldHiveAIMove(hiveMovementEffects))
-    {
-        moveHiveAI(ecm, hiveId, hiveMovementEffects);
-        updateHiveMovement(ecm, hiveId, hiveMovementEffects);
-    }
+        if (checkShouldHiveAIMove(hiveMovementEffects))
+        {
+            moveHiveAI(ecm, hiveId, hiveMovementEffects);
+            updateHiveMovement(ecm, hiveId, hiveMovementEffects);
+        }
+    });
 }
 
 inline auto update(ECM &ecm)

@@ -14,7 +14,7 @@ inline auto update(ECM &ecm)
 {
     ecm.getAll<GameEvent>().each([&](EId eId, auto &gameEvents) {
         gameEvents.inspect([&](const GameEvent &gameEvent) {
-            auto [_, gameComps] = ecm.getUnique<GameComponent>();
+            auto [_, gameComps] = ecm.get<GameComponent>();
             gameComps.mutate([&](GameComponent &gameComp) {
                 switch (gameEvent.event)
                 {

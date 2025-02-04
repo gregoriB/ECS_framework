@@ -32,11 +32,11 @@ inline void updateOutsideHiveAliens(ECM &ecm, EId hiveId, const HiveComponent &h
 inline void updateHiveBounds(ECM &ecm, EId hiveId)
 {
     ecm.get<HiveComponent>(hiveId).mutate([&](HiveComponent &hiveComp) {
-        constexpr int MIN_INT = std::numeric_limits<int>::min();
-        constexpr int MAX_INT = std::numeric_limits<int>::max();
+        constexpr float MIN_FLOAT = std::numeric_limits<float>::min();
+        constexpr float MAX_FLOAT = std::numeric_limits<float>::max();
 
-        Vector2 topLeft{MAX_INT, MAX_INT};
-        Vector2 bottomRight{MIN_INT, MIN_INT};
+        Vector2 topLeft{MAX_FLOAT, MAX_FLOAT};
+        Vector2 bottomRight{MIN_FLOAT, MIN_FLOAT};
 
         ecm.getAll<HiveAIComponent>().each([&](EId eId, auto &_) {
             ecm.get<PositionComponent>(eId).inspect([&](const PositionComponent &posComp) {
@@ -71,6 +71,8 @@ inline void handleHiveShift(ECM &ecm, auto &hiveMovementEffects)
             hiveMovementEffect.movement = Movement::DOWN;
             hiveMovementEffect.nextMove = Movement::LEFT;
             break;
+        default:
+            break;
         }
     });
 }
@@ -101,7 +103,7 @@ template <typename Movement> inline Vector2 calculateSpeed(const Vector2 &speed,
 
 template <typename Movement> inline bool checkIsOutOfBounds(ECM &ecm, EId hiveId, Movement &movement)
 {
-    auto [gameId, gameComps] = ecm.getUnique<GameComponent>();
+    auto [gameId, gameComps] = ecm.get<GameComponent>();
     auto &hiveSpeeds = ecm.get<MovementComponent>(hiveId).peek(&MovementComponent::speeds);
 
     auto &hiveAiIds = movement == Movement::LEFT ? ecm.getEntityIds<LeftAlienComponent>()
@@ -110,7 +112,7 @@ template <typename Movement> inline bool checkIsOutOfBounds(ECM &ecm, EId hiveId
         return false;
 
     auto &posComps = ecm.get<PositionComponent>(hiveAiIds[0]);
-    return posComps.check([&](const PositionComponent &positionComp) {
+    return !!posComps.find([&](const PositionComponent &positionComp) {
         auto [x, y] = calculateSpeed(hiveSpeeds, movement);
         Bounds newBounds{
             positionComp.bounds.position.x + x,
@@ -140,6 +142,8 @@ inline bool checkHiveOutOfBounds(ECM &ecm, EId hiveId, auto &hiveMovementEffects
     case Movement::LEFT:
     case Movement::RIGHT:
         return checkIsOutOfBounds(ecm, hiveId, movement);
+    default:
+        break;
     }
 
     return false;
@@ -149,6 +153,7 @@ inline void moveHiveAI(ECM &ecm, EId hiveId, auto &hiveMovementEffects)
 {
     auto movement = hiveMovementEffects.peek(&HiveMovementEffect::movement);
     auto &speeds = ecm.get<MovementComponent>(hiveId).peek(&MovementComponent::speeds);
+
     auto &allHiveAiIds = ecm.getEntityIds<HiveAIComponent>();
     if (!allHiveAiIds.size())
         return;
@@ -184,14 +189,13 @@ inline void updateHiveMovement(ECM &ecm, EId hiveId, auto &hiveMovementEffects)
 
 inline bool checkShouldHiveAIMove(Components<HiveMovementEffect> &hiveMovementEffects)
 {
-    return hiveMovementEffects.check(
+    return !!hiveMovementEffects.find(
         [&](const HiveMovementEffect &hiveMovementEffect) { return hiveMovementEffect.timer->hasElapsed(); });
 }
 
 inline void updateHive(ECM &ecm)
 {
     ecm.getAll<HiveMovementEffect>().each([&](EId hiveId, auto &hiveMovementEffects) {
-        ;
         if (checkHiveOutOfBounds(ecm, hiveId, hiveMovementEffects))
             handleHiveShift(ecm, hiveMovementEffects);
 

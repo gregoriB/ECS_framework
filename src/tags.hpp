@@ -19,6 +19,12 @@ struct NoStack
 struct Transform
 {
 };
+struct Required
+{
+};
+struct Unique
+{
+};
 
 struct Effect
 {
@@ -61,13 +67,28 @@ constexpr bool shouldDefaultToStack()
 
 template <typename T> constexpr bool isStacked()
 {
+    return isBase<T, Stack>();
+}
+
+template <typename T> constexpr bool isRequired()
+{
+    return isBase<T, Required>();
+}
+
+template <typename T> constexpr bool isUnique()
+{
+    return isBase<T, Unique>();
+}
+
+template <typename T> constexpr bool shouldStack()
+{
     if (isNotStacked<T>())
         return false;
 
     if (isEvent<T>())
         return true;
 
-    if (isBase<T, Stack>())
+    if (isStacked<T>())
         return true;
 
     return shouldDefaultToStack();

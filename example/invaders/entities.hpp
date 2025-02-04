@@ -9,8 +9,8 @@ inline void createGame(ECM &ecm, Vector2 &size)
     EntityId gameId = ecm.createEntity();
 
     PRINT("CREATE GAME", gameId)
-    ecm.addUnique<GameMetaComponent>(gameId, size);
-    ecm.addUnique<GameComponent>(gameId, Bounds{0, 0, size.x, size.y});
+    ecm.add<GameMetaComponent>(gameId, size);
+    ecm.add<GameComponent>(gameId, Bounds{0, 0, size.x, size.y});
 }
 
 inline EntityId hive(ECM &ecm, float x, float y, float w, float h)
@@ -19,10 +19,10 @@ inline EntityId hive(ECM &ecm, float x, float y, float w, float h)
     PRINT("CREATE HIVE", hiveId)
     ecm.clear<HiveComponent>();
     ecm.clear<HiveMovementEffect>();
-    auto [_, gameMetaComps] = ecm.getUnique<GameMetaComponent>();
+    auto [_, gameMetaComps] = ecm.get<GameMetaComponent>();
     auto &size = gameMetaComps.peek(&GameMetaComponent::screen);
-    ecm.addUnique<HiveComponent>(hiveId);
-    ecm.addUnique<HiveMovementEffect>(hiveId, Movements::RIGHT);
+    ecm.add<HiveComponent>(hiveId);
+    ecm.add<HiveMovementEffect>(hiveId, Movements::RIGHT);
     ecm.add<MovementComponent>(hiveId, Vector2{size.x / 200, size.y / 50});
 
     return hiveId;
@@ -33,7 +33,7 @@ inline EntityId player(ECM &ecm, float x, float y, float w, float h)
     EntityId id = ecm.createEntity();
 
     PRINT("CREATE PLAYER", id)
-    ecm.addUnique<PlayerComponent>(id);
+    ecm.add<PlayerComponent>(id);
     ecm.add<PositionComponent>(id, Bounds{x - (w / 2), y + (h / 2), w + (w / 2), h - (h / 2)});
     ecm.add<SpriteComponent>(id, Renderer::RGBA{0, 255, 0, 1});
     ecm.add<MovementComponent>(id, Vector2{w * 10, w * 10});
@@ -45,7 +45,7 @@ inline EntityId player(ECM &ecm, float x, float y, float w, float h)
 inline EntityId hiveAlien(ECM &ecm, float x, float y, float w, float h)
 {
     EntityId id = ecm.createEntity();
-    auto [hiveId, _] = ecm.getUnique<HiveComponent>();
+    auto [hiveId, _] = ecm.get<HiveComponent>();
     float diff = 7;
     ecm.add<AIComponent>(id);
     ecm.add<HiveAIComponent>(id, hiveId);

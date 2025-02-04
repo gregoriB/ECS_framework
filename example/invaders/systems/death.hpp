@@ -20,7 +20,7 @@ inline auto update(ECM &ecm)
     });
 
     for (auto &id : ids)
-        ecm.clearAllByEntity(id);
+        ecm.clearEntity(id);
 
     return cleanup;
 };

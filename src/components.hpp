@@ -1,139 +1,27 @@
 #pragma once
 
+#include "components_iterator.hpp"
 #include "core.hpp"
 #include "tags.hpp"
 #include "utilities.hpp"
+#include <stdexcept>
+#include <type_traits>
 
 template <typename T> using Transformer = std::function<T(T &)>;
-
-enum class Arrangement
-{
-    EMPTY,
-    TRANSFORMED,
-    MODIFIED,
-    NOT_STACKED,
-    STACKED,
-};
-
-enum class ComponentFlags
-{
-    NONE = 0,
-    EMPTY,
-};
 
 struct DefaultComponent
 {
 };
 
-template <typename T> class ComponentIterator
-{
-  public:
-    std::vector<T *>::iterator m_modifiedIter;
-    bool isModified{false};
-
-    std::vector<T>::iterator m_transformedIter;
-    bool isTransformed{false};
-
-    std::vector<T>::iterator m_componentsIter;
-    bool isComponents{false};
-
-    T *m_component;
-    bool isComponent{false};
-
-    ComponentIterator(std::vector<T *>::iterator _iter, Arrangement _arrangement)
-    {
-        switch (_arrangement)
-        {
-        case Arrangement::MODIFIED:
-            isModified = true;
-            m_modifiedIter = _iter;
-            break;
-        default:
-            ECS_LOG_WARNING("Arrangement not found for", getTypeName<T>(), "!")
-        }
-    }
-    ComponentIterator(std::vector<T>::iterator _iter, Arrangement _arrangement)
-    {
-        switch (_arrangement)
-        {
-        case Arrangement::TRANSFORMED:
-            isTransformed = true;
-            m_transformedIter = _iter;
-            break;
-        case Arrangement::STACKED:
-            isComponents = true;
-            m_componentsIter = _iter;
-            break;
-        default:
-            ECS_LOG_WARNING("Arrangement not found for", getTypeName<T>(), "!")
-        }
-    }
-    ComponentIterator(T *_component) : m_component(_component), isComponent(true)
-    {
-    }
-
-    [[nodiscard]] T &operator*()
-    {
-        assert((isModified + isTransformed + isComponents + isComponent) == 1 &&
-               "Iterator has conflicting modes!");
-
-        if (isComponent)
-            return *m_component;
-        if (isModified)
-            return *(*m_modifiedIter);
-        if (isTransformed)
-            return *m_transformedIter;
-        if (isComponents)
-            return (*m_componentsIter);
-
-        ECS_LOG_WARNING("Something has gone wrong if you've reached this point!")
-        return *m_component;
-    }
-
-    ComponentIterator &operator++()
-    {
-        assert((isModified + isTransformed + isComponents + isComponent) == 1 &&
-               "Iterator has conflicting modes!");
-
-        if (isComponent)
-            m_component = nullptr;
-        else if (isModified)
-            ++m_modifiedIter;
-        else if (isTransformed)
-            ++m_transformedIter;
-        else if (isComponents)
-            ++m_componentsIter;
-
-        return *this;
-    }
-
-    bool operator==(const ComponentIterator &other) const
-    {
-        assert((isModified + isTransformed + isComponents + isComponent) == 1 &&
-               "Iterator has conflicting modes!");
-
-        if (isComponent)
-            return m_component == other.m_component;
-        if (isModified)
-            return m_modifiedIter == other.m_modifiedIter;
-        if (isTransformed)
-            return m_transformedIter == other.m_transformedIter;
-        if (isComponents)
-            return m_componentsIter == other.m_componentsIter;
-
-        ECS_LOG_WARNING("Something went wrong if you reached this point!")
-        return m_component == other.m_component;
-    }
-
-    bool operator!=(const ComponentIterator &other) const
-    {
-        return !(*this == other);
-    }
-};
-
 template <typename T> class Components
 {
   public:
+    enum class ComponentFlags
+    {
+        NONE = 0,
+        EMPTY,
+    };
+
     Components(ComponentFlags _flag)
     {
     }
@@ -141,48 +29,6 @@ template <typename T> class Components
     template <typename... Args> Components(Args... _args)
     {
         emplace(_args...);
-    }
-
-    using Iterator = ComponentIterator<T>;
-
-    Iterator begin()
-    {
-        switch (getArrangement())
-        {
-        case Arrangement::TRANSFORMED:
-            return Iterator(transformed().begin(), Arrangement::TRANSFORMED);
-        case Arrangement::MODIFIED:
-            return Iterator(modified().begin(), Arrangement::MODIFIED);
-        case Arrangement::NOT_STACKED:
-            return Iterator(component());
-        case Arrangement::STACKED:
-            return Iterator(components().begin(), Arrangement::STACKED);
-        default:
-            throw std::runtime_error(std::string(getEnumString(getArrangement())) + " " + typeid(T).name() +
-                                     " arrangement has no iterator!!");
-        }
-
-        return Iterator(nullptr);
-    }
-
-    Iterator end()
-    {
-        switch (getArrangement())
-        {
-        case Arrangement::TRANSFORMED:
-            return Iterator(transformed().end(), Arrangement::TRANSFORMED);
-        case Arrangement::MODIFIED:
-            return Iterator(modified().end(), Arrangement::MODIFIED);
-        case Arrangement::NOT_STACKED:
-            return Iterator(nullptr);
-        case Arrangement::STACKED:
-            return Iterator(components().end(), Arrangement::STACKED);
-        default:
-            throw std::runtime_error(std::string(getEnumString(getArrangement())) + " " + typeid(T).name() +
-                                     " arrangement has no iterator!!");
-        }
-
-        return Iterator(nullptr);
     }
 
     /**
@@ -205,7 +51,8 @@ template <typename T> class Components
         // Maybe this could change in the future, but as of the time
         // of writing this, the transformation pipeline implementation
         // is such that the transformations are overwritten every time
-        // a method if called anyway to ensure they are not stale
+        // a method is called to ensure the transformations are not stale.
+        //
         // TODO Task : Reevaluate this and transformation pipelines
         handleTransformations(Transformation::PRESERVE);
 
@@ -245,7 +92,7 @@ template <typename T> class Components
      */
     template <typename P>
     [[nodiscard]] P derive(auto &&fn, P fallback, Transformation behavior = Transformation::DEFAULT)
-        requires std::invocable<std::decay_t<decltype(fn)>, const T &>
+        requires(std::invocable<std::decay_t<decltype(fn)>, const T &> && !Tags::shouldStack<T>())
     {
         static_assert(std::is_invocable_v<std::decay_t<decltype(fn)>, const T &>,
                       "Derive function must take const T& as argument.");
@@ -263,7 +110,7 @@ template <typename T> class Components
 
     template <typename P>
     [[nodiscard]] P derive(auto &&fn, Transformation behavior = Transformation::DEFAULT)
-        requires std::invocable<std::decay_t<decltype(fn)>, const T &>
+        requires(std::invocable<std::decay_t<decltype(fn)>, const T &> && !Tags::shouldStack<T>())
     {
         static_assert(std::is_invocable_v<std::decay_t<decltype(fn)>, const T &>,
                       "Derive function must take const T& as argument.");
@@ -285,8 +132,6 @@ template <typename T> class Components
     /**
      * @brief Extract a value as readonly FROM A NON-STACKED COMPONENT.
      *
-     * THROWS A RUNTIME ERROR IF THE COMPONENT IS EMPTY!
-     *
      * @param T::Prop
      * @param Transformation pipeline behavior
      *
@@ -294,48 +139,16 @@ template <typename T> class Components
      */
     template <typename Prop>
     [[nodiscard]] const Prop &peek(Prop T::*prop, Transformation behavior = Transformation::DEFAULT)
-        requires(!Tags::isStacked<T>())
+        requires(!Tags::shouldStack<T>())
     {
-        static_assert(!Tags::isStacked<T>(), "Cannot use peek method with a stacked component");
+        static_assert(!Tags::shouldStack<T>(), "Cannot use peek method with a stacked component");
 
-        if (isEmpty())
-        {
-            throw std::runtime_error("Property: " + getTypeName<decltype(prop)>() +
-                                     " could not be peeked from Component: " + getTypeName<T>());
-        }
+        ASSERT(!isEmpty(), "Property: " + getTypeName<decltype(prop)>() +
+                               " could not be peeked from Component: " + getTypeName<T>());
 
         handleTransformations(behavior);
 
-        for (auto &comp : *this)
-            return comp.*prop;
-    }
-
-    /**
-     * @brief Perform some check on the component
-     *
-     * @param Function
-     * @param Transformation pipeline behavior
-     *
-     * @return Bool - Results of the check
-     */
-    template <typename Func>
-    [[nodiscard]] bool check(Func &&fn, Transformation behavior = Transformation::DEFAULT)
-        requires(std::invocable<Func, const T &> && !Tags::isStacked<T>())
-    {
-        static_assert(std::is_convertible_v<std::invoke_result_t<Func, const T &>, bool>,
-                      "Check function must return bool.");
-        static_assert(!Tags::isStacked<T>(), "Cannot use check methods with a stacked component");
-
-        if (isEmpty())
-            return false;
-
-        handleTransformations(behavior);
-
-        for (auto &comp : *this)
-            if (fn(comp))
-                return true;
-
-        return false;
+        return (*begin()).*prop;
     }
 
     /**
@@ -421,6 +234,8 @@ template <typename T> class Components
     /**
      * @brief Get the first component
      *
+     * Intended to be used as a companion to .sort()
+     *
      * @param Function
      * @param Transformation pipeline behavior
      *
@@ -436,15 +251,42 @@ template <typename T> class Components
 
         handleTransformations(behavior);
 
-        for (auto &comp : *this)
-        {
-            if (shouldTransform(behavior))
-                newComps.transformed().push_back(T(comp));
-            else
-                newComps.modified().push_back(&comp);
+        auto &comp = *begin();
 
-            break;
-        }
+        if (shouldTransform(behavior))
+            newComps.transformed().push_back(T(comp));
+        else
+            newComps.modified().push_back(&comp);
+
+        return std::move(newComps);
+    }
+
+    /**
+     * @brief Get the last component
+     *
+     * Intended to be used as a companion to .sort()
+     *
+     * @param Function
+     * @param Transformation pipeline behavior
+     *
+     * @return New Components wrapper containing the result
+     */
+    [[nodiscard]] Components<T> last(Transformation behavior = Transformation::DEFAULT)
+    {
+        Components<T> newComps(ComponentFlags::EMPTY);
+        newComps.setTransformer(m_transformer);
+
+        if (isEmpty())
+            return std::move(newComps);
+
+        handleTransformations(behavior);
+
+        auto &comp = *(end() - 1);
+
+        if (shouldTransform(behavior))
+            newComps.transformed().push_back(T(comp));
+        else
+            newComps.modified().push_back(&comp);
 
         return std::move(newComps);
     }
@@ -483,8 +325,9 @@ template <typename T> class Components
                 newComps.modified().push_back(&comp);
         }
 
-        std::sort(newComps.modified().begin(), newComps.modified().end(),
-                  [&](T *a, T *b) { return fn(*a, *b); });
+        if (newComps.size() > 1)
+            std::sort(newComps.modified().begin(), newComps.modified().end(),
+                      [&](T *a, T *b) { return fn(*a, *b); });
 
         return std::move(newComps);
     }
@@ -602,6 +445,48 @@ template <typename T> class Components
     template <typename EntityId> friend class EntityComponentManager;
 
   private:
+    using Iterator = ComponentIterator<T>;
+
+    Iterator begin()
+    {
+        switch (getArrangement())
+        {
+        case Arrangement::TRANSFORMED:
+            return Iterator(transformed().begin(), Arrangement::TRANSFORMED);
+        case Arrangement::MODIFIED:
+            return Iterator(modified().begin(), Arrangement::MODIFIED);
+        case Arrangement::NOT_STACKED:
+            return Iterator(component());
+        case Arrangement::STACKED:
+            return Iterator(components().begin(), Arrangement::STACKED);
+        default:
+            throw std::runtime_error(std::string(getEnumString(getArrangement())) + " " + typeid(T).name() +
+                                     " arrangement has no iterator!!");
+        }
+
+        return Iterator(nullptr);
+    }
+
+    Iterator end()
+    {
+        switch (getArrangement())
+        {
+        case Arrangement::TRANSFORMED:
+            return Iterator(transformed().end(), Arrangement::TRANSFORMED);
+        case Arrangement::MODIFIED:
+            return Iterator(modified().end(), Arrangement::MODIFIED);
+        case Arrangement::NOT_STACKED:
+            return Iterator(nullptr);
+        case Arrangement::STACKED:
+            return Iterator(components().end(), Arrangement::STACKED);
+        default:
+            throw std::runtime_error(std::string(getEnumString(getArrangement())) + " " + typeid(T).name() +
+                                     " arrangement has no iterator!!");
+        }
+
+        return Iterator(nullptr);
+    }
+
     template <typename... Args> void emplace_back(Args &&...args)
     {
         components().emplace_back(std::forward<Args>(args)...);
@@ -609,7 +494,7 @@ template <typename T> class Components
 
     template <typename... Args> void emplace(Args... args)
     {
-        if (!Tags::isStacked<T>())
+        if (!Tags::shouldStack<T>())
         {
             m_component.emplace(args...);
             return;

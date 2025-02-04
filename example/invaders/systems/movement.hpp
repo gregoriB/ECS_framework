@@ -63,7 +63,7 @@ inline void updateOtherMovement(ECM &ecm)
             ecm.gather<PositionComponent, ProjectileComponent, PlayerComponent>(eId);
 
         positionComps.inspect([&](const PositionComponent &positionComp) {
-            auto [gameId, gameComps] = ecm.getUnique<GameComponent>();
+            auto [gameId, gameComps] = ecm.get<GameComponent>();
             auto &gameBounds = gameComps.peek(&GameComponent::bounds);
             auto [gX, gY, gW, gH] = gameBounds.box();
 

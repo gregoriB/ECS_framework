@@ -7,6 +7,9 @@ using NoStack = Tags::NoStack;
 using Stack = Tags::Stack;
 using Event = Tags::Event;
 using Effect = Tags::Effect;
+using Required = Tags::Required;
+using Unique = Tags::Unique;
+using Transform = Tags::Transform;
 
 enum class Movements
 {
@@ -24,7 +27,7 @@ enum class Actions
     QUIT,
 };
 
-struct PlayerComponent
+struct PlayerComponent : Unique
 {
 };
 
@@ -40,7 +43,7 @@ struct RightAlienComponent : Stack
 {
 };
 
-struct HiveComponent
+struct HiveComponent : Unique
 {
     Bounds bounds{};
 };
@@ -90,7 +93,7 @@ struct AIMovementEffect : Effect
 {
 };
 
-struct HiveMovementEffect : Effect
+struct HiveMovementEffect : Effect, NoStack
 {
     float moveInterval{0.5f};
     Movements movement;
@@ -134,7 +137,7 @@ struct MovementEvent : Event
     }
 };
 
-struct PositionComponent
+struct PositionComponent : Transform
 {
     Bounds bounds;
 
@@ -143,7 +146,7 @@ struct PositionComponent
     }
 };
 
-struct PositionEvent : Event
+struct PositionEvent : Event, NoStack
 {
     Vector2 coords;
 
@@ -205,7 +208,7 @@ struct AttackEffect : Effect
     }
 };
 
-struct GameComponent
+struct GameComponent : Required, Unique
 {
     Bounds bounds;
     bool isGameOver{};
@@ -216,7 +219,7 @@ struct GameComponent
     }
 };
 
-struct GameMetaComponent
+struct GameMetaComponent : Required, Unique
 {
     Vector2 screen;
     float deltaTime{};

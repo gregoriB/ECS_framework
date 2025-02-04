@@ -34,24 +34,36 @@ template <typename... Args> constexpr void print(const Args &...args)
     std::cout << '\n';
 };
 
-inline template <typename... Args> constexpr void debugWarningPrint(const Args &...args)
+template <typename... Args> constexpr void debugWarningPrint(const Args &...args)
 {
     std::cout << "\n ================= GAME ENGINE DEBUG LOG ===================\n";
     print(args..., '\n');
 };
 
-inline template <typename... Args> constexpr void benchmarkPrint(const Args &...args)
+template <typename... Args> constexpr void benchmarkPrint(const Args &...args)
 {
     std::cout << "\n ================= GAME ENGINE BENCHMARK LOG ===================\n";
     print(args..., '\n');
 };
 
-inline template <typename... Args> constexpr void debugWarningLog(const Args &...args)
+template <typename... Args> constexpr void debugWarningLog(const Args &...args)
 {
     // TODO Task : Update to log to file
     std::cout << "\n ================= GAME ENGINE LOG ===================\n";
     print(args..., '\n');
 };
+
+inline void _assert(bool condition, std::string m)
+{
+    if (!condition)
+    {
+        bool SEE_ABOVE_MESSAGE = false;
+        print("!!!!!!!!!    ASSERTION FAILED: ", m, "   !!!!!!!!!");
+        assert(SEE_ABOVE_MESSAGE);
+    }
+}
+
+#define ASSERT(condition, message) _assert(condition, message);
 
 #define PRINT(...) print(__VA_ARGS__);
 

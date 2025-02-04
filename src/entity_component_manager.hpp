@@ -5,7 +5,6 @@
 #include "sparse_set.hpp"
 #include "tags.hpp"
 #include "utilities.hpp"
-#include <stdexcept>
 
 template <typename EntityId> class EntityComponentManager
 {
@@ -24,13 +23,10 @@ template <typename EntityId> class EntityComponentManager
     using StoredTransformationFnMap = std::unordered_map<size_t, StoredTransformationFn>;
 
   public:
-    // TODO Task : Move default value to configurable file or a compiler flag
-    size_t m_standardSetSize = 10024;
-    size_t m_minSetSize = 100;
-
-  public:
-    EntityComponentManager()
+    EntityComponentManager(size_t minSetSize = 100, size_t setSize = 10024)
     {
+        m_minSetSize = minSetSize;
+        m_standardSetSize = setSize;
     }
 
     EntityId createEntity()
@@ -49,37 +45,29 @@ template <typename EntityId> class EntityComponentManager
      */
     template <typename T, typename... Args> void add(EntityId eId, Args... args)
     {
+        if (!eId)
+            return;
+
+        if constexpr (Tags::isUnique<T>())
+        {
+            addUnique<T>(eId, args...);
+            return;
+        }
+
         addComponent<T>(eId, args...);
-    }
-
-    template <typename T, typename... Args> void addUnique(EntityId eId, Args... args)
-    {
-        addComponent<T>(eId, args...);
-        getComponentSet<T>(m_minSetSize).lock();
-    }
-
-    template <typename T, typename... Args> void overwriteUnique(EntityId eId, Args... args)
-    {
-        auto [uniqueId, _] = getUnique<T>();
-
-        if (eId != uniqueId)
-            throw std::runtime_error("Enitty ID: " + std::to_string(eId) +
-                                     " is not owning entity for unique component: " + getTypeName<T>());
-
-        auto &cSet = getComponentSet<T>();
-        if (!cSet.isLocked())
-            throw std::runtime_error(getTypeName<T>() + " is not unique!");
-
-        overwriteComponent<T>(eId, cSet, args...);
     }
 
     template <typename T, typename... Args> void overwrite(EntityId eId, Args... args)
     {
+        if (!eId)
+            return;
+
         auto &cSet = getComponentSet<T>();
-        if (cSet.isLocked())
-            throw std::runtime_error(
-                getTypeName<T>() +
-                " is unique. Cannot overwrite. Use `overwriteUnique` to overwrite a unique component");
+        if constexpr (Tags::isUnique<T>())
+        {
+            overwriteUnique<T>(eId, cSet, args...);
+            return;
+        }
 
         overwriteComponent<T>(eId, cSet, args...);
     }
@@ -94,6 +82,39 @@ template <typename EntityId> class EntityComponentManager
     template <typename T> [[nodiscard]] Components<T> &get(EntityId eId)
     {
         return getComponents<T>(eId);
+    }
+
+    /**
+     * @brief Get a specified UNIQUE component
+     *
+     * @return std::pair containing the entity id and component reference
+     */
+    template <typename T>
+    [[nodiscard]] std::pair<EntityId, Components<T> &> get()
+        requires(Tags::isUnique<T>())
+    {
+        auto &cSet = getComponentSet<T>();
+        ASSERT(Tags::isUnique<T>(), getTypeName<T>() + " is not a unique component!");
+
+        EntityId id{0};
+        Components<T> *compsPtr;
+        cSet.each([&](EntityId eId, auto &comps) {
+            if (id == 0)
+            {
+                id = eId;
+                compsPtr = &comps;
+            }
+            // Should not break the loop after the first element
+            // because auto-pruning will clean up dummy components
+            // as it iterates over them
+        });
+
+        if (compsPtr != nullptr)
+            return {id, *compsPtr};
+
+        // If the set is empty, create a dummy component for a fake entity
+        auto &comps = get<T>(0);
+        return {0, comps};
     }
 
     /**
@@ -114,36 +135,6 @@ template <typename EntityId> class EntityComponentManager
         return {getComponents<T>(eId)...};
     }
 
-    /*
-     * @brief Get the id for an entity which is unique for the type
-     *
-     * @return Entity Id
-     */
-    template <typename T> [[nodiscard]] std::pair<EntityId, Components<T> &> getUnique()
-    {
-        auto &cSet = getComponentSet<T>(m_minSetSize);
-        if (!cSet.size())
-            throw std::runtime_error(getTypeName<T>() + " unique component set does not exist!");
-
-        if (!cSet.isLocked())
-            throw std::runtime_error(getTypeName<T>() + " is not unique!");
-
-        EntityId id{0};
-        Components<T> *compsPtr = nullptr;
-        cSet.each([&](EntityId eId, auto &comps) {
-            if (id == 0)
-            {
-                id = eId;
-                compsPtr = &comps;
-            }
-            // Should not break the loop after the first element
-            // because auto-pruning will clean up dummy components
-            // as it iterates over them
-        });
-
-        return {id, *compsPtr};
-    }
-
     template <typename T> [[nodiscard]] const std::vector<EntityId> &getEntityIds()
     {
         return getComponentSet<T>(m_minSetSize).getIds();
@@ -159,13 +150,11 @@ template <typename EntityId> class EntityComponentManager
         return {getComponentSet<T>(m_minSetSize)...};
     }
 
-    template <typename T> [[nodiscard]] bool isUnique() const
-    {
-        return getComponentSet<T>().isLocked();
-    }
-
     template <typename... Components> void clear()
     {
+#ifdef ecs_allow_debug
+        (debugCheckRequired<Components>("Clear"), ...);
+#endif
         clearComponents<Components...>();
     }
 
@@ -176,47 +165,21 @@ template <typename EntityId> class EntityComponentManager
 
     template <typename... Components> void clearByEntity(EntityId eId)
     {
+#ifdef ecs_allow_debug
+        (debugCheckRequired<Components>("Clear by entity"), ...);
+#endif
         clearEntityComponent<Components...>(eId);
     }
 
-    void clearAllByEntity(EntityId eId)
+    void clearEntity(EntityId eId)
     {
         for (auto iter = getStoredComponents().begin(); iter != getStoredComponents().end(); ++iter)
-        {
-            auto &cSet = getSetFromIterator(iter);
-            cSet.erase(eId);
-        }
+            getSetFromIterator(iter).erase(eId);
     }
 
     template <typename... Components> void prune()
     {
         (prune<Components>(getComponentHash<Components>()), ...);
-    }
-
-    /*
-     * @brief Iterate over component sets by tag to cleanup empty components
-     *
-     * Iterate over specific sets by tag to either remove stale entities, or
-     * delete the entire set if all entity components within are stale.
-     */
-    template <typename Tag> void pruneByTag()
-    {
-        auto tagHashes = getTagHashes<Tag>();
-        for (auto &tagHash : tagHashes)
-        {
-            if (!tagHash)
-                continue;
-
-            auto tagIter = m_tagMap.find(tagHash);
-            if (tagIter == m_tagMap.end())
-                continue;
-
-            auto &hashSet = tagIter->second;
-            for (auto &componentHash : hashSet)
-            {
-                prune<Tag>(componentHash);
-            }
-        }
     }
 
     template <typename T> constexpr void registerTransformation(TransformationFn<T> transformationFn)
@@ -225,55 +188,44 @@ template <typename EntityId> class EntityComponentManager
         m_transformationMap.emplace(getComponentHash<T>(), std::move(casted));
     }
 
-#ifdef game_allow_debug
-    /*
-     * !!! CURRENTLY DOES NOT WORK - USE AUTO PRUNE OR MANUAL PRUNING INSTEAD !!!
-     * @brief Iterate over every component set to cleanup empty sets
-     *
-     * Heavy-handed approach.  Iterate over every set and delete the
-     * entire set if all entities are stale.
-     */
-    // TODO Task : Make this work. May need to be casted to work properly.
-    void pruneAll()
-    {
-        for (auto iter = getStoredComponents().begin(); iter != getStoredComponents().end();)
-        {
-            std::vector<EntityId> ids;
-
-            auto &cSet = getSetFromIterator(iter);
-            cSet.eachWithEmpty([&](EntityId eId, auto &components) {
-                if (!components.size())
-                    ids.push_back(eId);
-            });
-
-            if (!cSet.size() || ids.size() == cSet.size())
-            {
-                iter = getStoredComponents().erase(iter);
-                continue;
-            }
-
-            for (const auto &id : ids)
-                cSet.erase(id);
-
-            ++iter;
-        }
-    }
-
-    /*
-     * !!! CAUSES UNDEFINED BEHAVIOR - DO NOT USE !!!
-     * // TODO Task : See if casting can be updated to make this a
-     * // viable method without undefined behavior
-     */
-    template <typename Tag, typename Func> void eachByTag(Func fn)
-    {
-        eachComponentByTag<Tag>(fn);
-    }
-#endif
-
     EntityComponentManager(const EntityComponentManager &) = delete;
     EntityComponentManager &operator=(const EntityComponentManager &) = delete;
 
   private:
+    template <typename T, typename... Args> void addUnique(EntityId eId, Args... args)
+    {
+        addComponent<T>(eId, args...);
+        getComponentSet<T>(m_minSetSize).lock();
+    }
+
+    template <typename T, typename... Args>
+    void overwriteUnique(EntityId eId, ComponentSet<T> cSet, Args... args)
+    {
+        auto [uniqueId, _] = getUnique<T>();
+
+        ASSERT(eId == uniqueId, "Enitty ID: " + std::to_string(eId) +
+                                    " is not owning entity for unique component: " + getTypeName<T>())
+        ASSERT(Tags::isUnique<T>(), getTypeName<T>() + " is not unique!")
+
+        overwriteComponent<T>(eId, cSet, args...);
+    }
+
+#ifdef ecs_allow_debug
+    template <typename Component> void debugCheckRequired(std::string operation)
+    {
+        if (!Tags::isRequired<Component>())
+            return;
+
+        ECS_LOG_WARNING(operation,
+                        "operation performed on a required component: " + getTypeName<Component>() + "!");
+    }
+
+    template <typename T> void debugCheckForConflictingTags()
+    {
+        static_assert(!(Tags::isStacked<T>() && Tags::isNotStacked<T>()), "Conflicting tags detected!");
+    }
+#endif
+
     template <typename T, typename Id> std::tuple<Components<T> &> getComponentsHelper(auto &cSet, Id id)
     {
         return std::tuple<Components<T> &>{getOrCreateComponent<T>(cSet, id)};
@@ -341,16 +293,23 @@ template <typename EntityId> class EntityComponentManager
     template <typename T> Components<T> &getComponents(EntityId eId)
     {
         auto &cSet = getComponentSet<T>();
+        if (!cSet)
+            ASSERT(!Tags::isRequired<T>(), getTypeName<T>() + " is a required component!")
+
         return getOrCreateComponent<T>(cSet, eId);
     }
 
     template <typename T> Components<T> &getOrCreateComponent(ComponentSet<T> &cSet, EntityId eId)
     {
+#ifdef ecs_allow_debug
+        debugCheckForConflictingTags<T>();
+#endif
+
         auto comps = cSet.get(eId);
         if (!comps)
         {
 
-            Components<T> dummy{ComponentFlags::EMPTY};
+            Components<T> dummy{Components<T>::ComponentFlags::EMPTY};
             if (cSet.isLocked())
             {
                 cSet.unlock();
@@ -369,8 +328,7 @@ template <typename EntityId> class EntityComponentManager
     template <typename T, typename... Args> void addComponent(EntityId eId, Args... args)
     {
         ComponentSet<T> &cSet = getComponentSet<T>();
-        if (cSet.isLocked())
-            throw std::runtime_error("Attempt to add to a unique component set for " + getTypeName<T>());
+        ASSERT(!cSet.isLocked(), "Attempt to add to a unique component set for " + getTypeName<T>())
 
         auto comps = cSet.get(eId);
         if (!comps)
@@ -383,9 +341,9 @@ template <typename EntityId> class EntityComponentManager
             return;
         }
 
-        if (!Tags::isStacked<T>() && comps->size() >= 1)
+        if (!Tags::shouldStack<T>() && comps->size() >= 1)
         {
-            ECS_LOG_WARNING(eId, "Already contains a unique", getTypeName<T>(), "Add failed");
+            ECS_LOG_WARNING(eId, "Already contains a NoStack-tagged ", getTypeName<T>(), "Add failed!");
 
             return;
         }
@@ -400,7 +358,7 @@ template <typename EntityId> class EntityComponentManager
         auto comps = cSet.get(eId);
         if (!comps)
         {
-            ECS_LOG_WARNING(eId, "does not contain", getTypeName<T>(), "Overwrite failed");
+            ECS_LOG_WARNING(eId, "does not contain", getTypeName<T>(), "Overwrite failed!");
             return;
         }
 
@@ -410,6 +368,10 @@ template <typename EntityId> class EntityComponentManager
 
     template <typename T> void createComponentSet(size_t maxSize)
     {
+#ifdef ecs_allow_debug
+        debugCheckForConflictingTags<T>();
+#endif
+
         auto componentHash = getComponentHash<T>();
         auto cSet = std::make_unique<ComponentSet<T>>(maxSize, m_standardSetSize);
         getStoredComponents().insert({componentHash, std::move(cSet)});
@@ -484,13 +446,16 @@ template <typename EntityId> class EntityComponentManager
         return typeid(T).hash_code();
     }
 
-    template <typename T> const std::array<size_t, 4> getTagHashes() const
+    template <typename T> const std::array<size_t, 7> getTagHashes() const
     {
         return {
             Tags::isEvent<T>() ? typeid(Tags::Event).hash_code() : 0,
             Tags::isEffect<T>() ? typeid(Tags::Effect).hash_code() : 0,
             Tags::isNotStacked<T>() ? typeid(Tags::NoStack).hash_code() : 0,
+            Tags::isStacked<T>() ? typeid(Tags::Stack).hash_code() : 0,
             Tags::isTransform<T>() ? typeid(Tags::Transform).hash_code() : 0,
+            Tags::isRequired<T>() ? typeid(Tags::Required).hash_code() : 0,
+            Tags::isUnique<T>() ? typeid(Tags::Unique).hash_code() : 0,
         };
     }
 
@@ -500,12 +465,8 @@ template <typename EntityId> class EntityComponentManager
         return *static_cast<ComponentSet<T> *>(&getSetFromIterator(iter));
 #else
         auto casted = dynamic_cast<ComponentSet<T> *>(&getSetFromIterator(iter));
-        if (!casted)
-        {
-            auto errorMessage = getTypeName<T>() + " Failed dynamic_cast!";
-            ECS_LOG_WARNING(errorMessage);
-            throw std::runtime_error(errorMessage);
-        }
+        ASSERT(casted, getTypeName<T>() + " Failed dynamic_cast!")
+
         return *casted;
 #endif
     }
@@ -548,4 +509,80 @@ template <typename EntityId> class EntityComponentManager
     StoredTags m_tagMap{};
     StoredTransformationFnMap m_transformationMap{};
     EntityId m_nextEntityId{static_cast<EntityId>(reservedEntities)};
+
+    size_t m_standardSetSize = 10024;
+    size_t m_minSetSize = 100;
+
+#ifdef ecs_allow_experimental
+  public:
+    /*
+     * !!! CURRENTLY DOES NOT WORK - USE AUTO PRUNE OR MANUAL PRUNING INSTEAD !!!
+     * @brief Iterate over every component set to cleanup empty sets
+     *
+     * Heavy-handed approach.  Iterate over every set and delete the
+     * entire set if all entities are stale.
+     */
+    // TODO Task : Make this work. May need to be casted to work properly.
+    void pruneAll()
+    {
+        for (auto iter = getStoredComponents().begin(); iter != getStoredComponents().end();)
+        {
+            std::vector<EntityId> ids;
+
+            auto &cSet = getSetFromIterator(iter);
+            cSet.eachWithEmpty([&](EntityId eId, auto &components) {
+                if (!components.size())
+                    ids.push_back(eId);
+            });
+
+            if (!cSet.size() || ids.size() == cSet.size())
+            {
+                iter = getStoredComponents().erase(iter);
+                continue;
+            }
+
+            for (const auto &id : ids)
+                cSet.erase(id);
+
+            ++iter;
+        }
+    }
+
+    /*
+     * !!! CAUSES UNDEFINED BEHAVIOR - DO NOT USE !!!
+     * // TODO Task : See if casting can be updated to make this a
+     * // viable method without undefined behavior
+     */
+    template <typename Tag, typename Func> void eachByTag(Func fn)
+    {
+        eachComponentByTag<Tag>(fn);
+    }
+
+    /*
+     * !!! CAUSES UNDEFINED BEHAVIOR - DO NOT USE !!!
+     * @brief Iterate over component sets by tag to cleanup empty components
+     *
+     * Iterate over specific sets by tag to either remove stale entities, or
+     * delete the entire set if all entity components within are stale.
+     */
+    template <typename Tag> void pruneByTag()
+    {
+        auto tagHashes = getTagHashes<Tag>();
+        for (auto &tagHash : tagHashes)
+        {
+            if (!tagHash)
+                continue;
+
+            auto tagIter = m_tagMap.find(tagHash);
+            if (tagIter == m_tagMap.end())
+                continue;
+
+            auto &hashSet = tagIter->second;
+            for (auto &componentHash : hashSet)
+            {
+                prune<Tag>(componentHash);
+            }
+        }
+    }
+#endif
 };

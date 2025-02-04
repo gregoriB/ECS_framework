@@ -127,6 +127,14 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
         return contains(id) ? &(m_values[m_pointers[id]]) : nullptr;
     }
 
+    [[nodiscard]] std::pair<Id, T *> getFirst()
+    {
+        if (m_ids.empty())
+            return {0, nullptr};
+
+        return {m_ids[0], &m_values[0]};
+    }
+
     void lock()
     {
         m_isLocked = true;
@@ -155,7 +163,7 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
             return;
         }
 
-        if (id >= m_pointers.size())
+        while (id >= m_pointers.size())
         {
             auto pSize = m_pointers.size();
             auto newSize = pSize > 0 ? pSize + (pSize / 2) : m_resize;

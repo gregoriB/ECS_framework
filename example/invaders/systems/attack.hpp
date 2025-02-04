@@ -52,6 +52,8 @@ inline void processAttacks(ECM &ecm)
         case (Movements::DOWN):
             projectileId = createDownwardProjectile(ecm, bounds);
             break;
+        default:
+            break;
         }
 
         ecm.add<AttackEffect>(eId, projectileId);

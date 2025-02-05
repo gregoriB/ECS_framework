@@ -199,11 +199,18 @@ struct AttackEvent : Event
 {
 };
 
-struct AttackEffect : Effect
+struct AttackEffect : Effect, Stack
 {
     EntityId attackId;
 
     AttackEffect(EntityId _attackId) : attackId(_attackId)
+    {
+    }
+};
+
+struct AttackDelayEffect : Effect
+{
+    AttackDelayEffect(float _duration) : Effect(_duration)
     {
     }
 };

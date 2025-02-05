@@ -24,6 +24,7 @@ inline EntityId hive(ECM &ecm, float x, float y, float w, float h)
     ecm.add<HiveComponent>(hiveId);
     ecm.add<HiveMovementEffect>(hiveId, Movements::RIGHT);
     ecm.add<MovementComponent>(hiveId, Vector2{size.x / 200, size.y / 50});
+    ecm.add<AttackDelayEffect>(hiveId, 3);
 
     return hiveId;
 }
@@ -51,6 +52,7 @@ inline EntityId hiveAlien(ECM &ecm, float x, float y, float w, float h)
     ecm.add<HiveAIComponent>(id, hiveId);
     ecm.add<PositionComponent>(id, Bounds{x - diff, y, w + diff, h});
     ecm.add<MovementComponent>(id, Vector2{w / 2, w});
+    ecm.add<AttackComponent>(id, Movements::DOWN);
 
     return id;
 };
@@ -129,13 +131,14 @@ inline EntityId createDownwardProjectile(ECM &ecm, Bounds bounds)
 {
     auto [x, y, w, h] = bounds.get();
     float newW = w / 5;
-    float newH = h * 2;
+    float newH = h;
+    float newY = y + newH;
     float newX = x + (w / 2) - (newW / 2);
     EntityId id = createProjectile(ecm, bounds);
     ecm.add<MovementEffect>(id, Vector2{newX, 10000});
-    ecm.add<PositionComponent>(id, Bounds{newX, y - newH, newW, newH});
+    ecm.add<PositionComponent>(id, Bounds{newX, newY, newW, newH});
     using Movements = decltype(ProjectileComponent::movement);
     ecm.add<ProjectileComponent>(id, Movements::DOWN);
 
     return id;
-};
+}

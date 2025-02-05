@@ -17,8 +17,7 @@ template <typename Id, typename T> class BaseSparseSet
     virtual void erase(Id id) = 0;
     virtual size_t size() const = 0;
 
-    template <typename Func>
-    void each(Func fn)
+    template <typename Func> void each(Func fn)
     {
     }
 
@@ -27,7 +26,9 @@ template <typename Id, typename T> class BaseSparseSet
     {
     }
 
-    virtual void prune() {}
+    virtual void prune()
+    {
+    }
 };
 
 template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Components<DefaultComponent>>
@@ -49,6 +50,10 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
 
     [[nodiscard]] const std::vector<Id> &getIds()
     {
+
+#ifndef ecs_disable_auto_prune
+        prune();
+#endif
         return m_ids;
     }
 
@@ -257,7 +262,7 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
                     continue;
                 }
             }
-                
+
             ++i;
         }
     }

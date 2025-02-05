@@ -12,6 +12,7 @@ namespace Utilties
 {
 inline void registerTransformations(ECM &ecm)
 {
+    return;
     ecm.registerTransformation<PositionComponent>([&](auto eId, PositionComponent comp) {
         if (ecm.get<ProjectileComponent>(eId))
         {

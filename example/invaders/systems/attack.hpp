@@ -15,13 +15,15 @@ inline void cleanup(ECM &ecm)
     ecm.prune<AttackEffect>();
 }
 
-inline void updateAttackEffect(ECM &ecm, auto &attackEffects)
+inline void updateAttackEffect(ECM &ecm)
 {
-    // clang-format off
-    attackEffects
-        .filter([&](const auto &effect) { return !ecm.get<ProjectileComponent>(effect.attackId); })
-        .mutate([&](auto &effect) { effect.cleanup = true; });
-    // clang-format on
+    ecm.getAll<AttackEffect>().each([&](EId eId, auto &attackEffects) {
+        // clang-format off
+        attackEffects
+            .filter([&](const auto &effect) { return !ecm.get<ProjectileComponent>(effect.attackId); })
+            .mutate([&](auto &effect) { effect.cleanup = true; });
+        // clang-format on
+    });
 }
 
 inline void processAttacks(ECM &ecm)
@@ -29,16 +31,9 @@ inline void processAttacks(ECM &ecm)
     ecm.getAll<AttackEvent>().each([&](EId eId, auto &attackEvents) {
         auto &attackEffects = ecm.get<AttackEffect>(eId);
         if (attackEffects)
-        {
-            updateAttackEffect(ecm, attackEffects);
-            return;
-        }
-
-        if (!ecm.get<AttackComponent>(eId))
             return;
 
-        auto [positionComps, attackComps, aiComps] =
-            ecm.gather<PositionComponent, AttackComponent, AIComponent>(eId);
+        auto [positionComps, attackComps] = ecm.gather<PositionComponent, AttackComponent>(eId);
 
         auto &bounds = positionComps.peek(&PositionComponent::bounds);
         auto direction = attackComps.peek(&AttackComponent::direction);
@@ -53,11 +48,13 @@ inline void processAttacks(ECM &ecm)
             projectileId = createDownwardProjectile(ecm, bounds);
             break;
         default:
-            break;
+            return;
         }
 
         ecm.add<AttackEffect>(eId, projectileId);
     });
+
+    updateAttackEffect(ecm);
 }
 
 inline auto update(ECM &ecm)

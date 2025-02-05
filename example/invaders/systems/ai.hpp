@@ -2,6 +2,7 @@
 
 #include "../components.hpp"
 #include "../core.hpp"
+#include <cstdlib>
 
 namespace Systems::AI
 {
@@ -207,9 +208,55 @@ inline void updateHive(ECM &ecm)
     });
 }
 
+inline bool containsId(const auto &vec, EntityId id)
+{
+    for (const auto &vecId : vec)
+        if (vecId == id)
+            return true;
+
+    return false;
+}
+
+inline void handleAttacks(ECM &ecm)
+{
+    auto [hiveId, hiveComps] = ecm.get<HiveComponent>();
+    auto &attackDelayEffects = ecm.get<AttackDelayEffect>(hiveId);
+    if (attackDelayEffects)
+    {
+        auto elapsedEffect = attackDelayEffects.find([&](const AttackDelayEffect &attackDelayEffect) {
+            return attackDelayEffect.timer->hasElapsed();
+        });
+
+        if (!elapsedEffect)
+            return;
+
+        ecm.clearByEntity<AttackDelayEffect>(hiveId);
+    }
+
+    auto attackingAIs = ecm.getEntityIds<HiveAIComponent, AttackEffect>();
+    if (attackingAIs.size() >= 3)
+        return;
+
+    auto hiveAiIds = ecm.getEntityIds<HiveAIComponent>();
+    for (auto iter = hiveAiIds.begin(); iter != hiveAiIds.end();)
+    {
+        auto id = hiveAiIds[*iter];
+        if (containsId(attackingAIs, id))
+            iter = hiveAiIds.erase(iter);
+        else
+            ++iter;
+    }
+
+    float randomIndex = std::rand() % hiveAiIds.size();
+    ecm.add<AttackEvent>(hiveAiIds[randomIndex]);
+    float randomDelay = std::rand() % 10;
+    ecm.add<AttackDelayEffect>(hiveId, randomDelay);
+}
+
 inline auto update(ECM &ecm)
 {
     updateHive(ecm);
+    handleAttacks(ecm);
 
     return cleanup;
 };

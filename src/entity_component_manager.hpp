@@ -135,9 +135,39 @@ template <typename EntityId> class EntityComponentManager
         return {getComponents<T>(eId)...};
     }
 
-    template <typename T> [[nodiscard]] const std::vector<EntityId> &getEntityIds()
+    template <typename... Components> [[nodiscard]] const std::vector<EntityId> getEntityIds()
     {
-        return getComponentSet<T>(m_minSetSize).getIds();
+        if constexpr (sizeof...(Components) == 1)
+            return getComponentSet<Components...>(m_minSetSize).getIds();
+
+        // TODO Task : Refactor and optimize
+        //
+        // Possible optimizations:
+        // Builds list of component hashes for each id and remove any id which does not have the correct
+        // hashes
+        std::unordered_set<EntityId> ids{};
+        (
+            [&]() {
+                auto &cSet = getComponentSet<Components>();
+                for (const auto &id : cSet.getIds())
+                    ids.insert(id);
+            }(),
+            ...);
+
+        (
+            [&]() {
+                auto &cSet = getComponentSet<Components>();
+                for (auto iter = ids.begin(); iter != ids.end();)
+                {
+                    if (!cSet.contains(*iter))
+                        iter = ids.erase(iter);
+                    else
+                        ++iter;
+                }
+            }(),
+            ...);
+
+        return std::vector<EntityId>(ids.begin(), ids.end());
     }
 
     template <typename T> [[nodiscard]] ComponentSet<T> &getAll()

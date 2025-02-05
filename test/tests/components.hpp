@@ -148,8 +148,9 @@ inline void test_effect_cleanup_only_effect_components(ECM &ecm)
 
     testEvents.mutate(
         [&](TestEventComp &testEvent) { assert(testEvent.message == "this is an event component"); });
-    testnonstacks.mutate(
-        [&](TestNonStackedComp &testnonstack) { assert(testnonstack.message == "this is a nonStacked component"); });
+    testnonstacks.mutate([&](TestNonStackedComp &testnonstack) {
+        assert(testnonstack.message == "this is a nonStacked component");
+    });
     testTransformeds.mutate([&](TestTransformComp &testTransformed) {
         assert(testTransformed.message == "this is a transform component");
     });
@@ -380,9 +381,9 @@ inline void test_prune_all(ECM &ecm)
     auto &compsSet = ecm.getAll<TestEffectComp>();
     assert(compsSet.size() == 1);
 
-    auto& comps1 = ecm.get<TestEffectComp>(id);
+    auto &comps1 = ecm.get<TestEffectComp>(id);
     comps1.remove([&](const TestEffectComp &testComp) { return true; });
-    auto& comps2 = ecm.get<TestNonStackedComp>(id);
+    auto &comps2 = ecm.get<TestNonStackedComp>(id);
     comps2.remove([&](const TestNonStackedComp &testComp) { return true; });
 
     assert(comps1.size() == 0);

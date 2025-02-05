@@ -3,7 +3,6 @@
 #include "components.hpp"
 #include "core.hpp"
 #include "utilities.hpp"
-#include <array>
 
 template <typename Id, typename T> class BaseSparseSet
 {
@@ -18,11 +17,8 @@ template <typename Id, typename T> class BaseSparseSet
     virtual void erase(Id id) = 0;
     virtual size_t size() const = 0;
 
-    void each(EachFn fn)
-    {
-    }
-
-    void each(BreakableEachFn fn, bool shouldBreak)
+    template <typename Func>
+    void each(Func fn)
     {
     }
 
@@ -30,6 +26,8 @@ template <typename Id, typename T> class BaseSparseSet
     void eachWithEmpty(EachFn fn)
     {
     }
+
+    virtual void prune() {}
 };
 
 template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Components<DefaultComponent>>
@@ -81,6 +79,7 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
     template <typename Func> void eachNoBreak(Func &&func)
     {
         for (auto i = 0; i < m_ids.size();)
+        {
             if (m_pointers[m_ids[i]] != -1)
             {
                 if (m_values[i])
@@ -93,12 +92,15 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
                     continue;
                 }
 #endif
-                ++i;
             }
+
+            ++i;
+        }
     }
     template <typename Func> void eachWithBreak(Func &&func)
     {
         for (auto i = 0; i < m_ids.size();)
+        {
             if (m_pointers[m_ids[i]] != -1)
             {
                 if (m_values[i] && !func(m_ids[i], m_values[i]))
@@ -111,8 +113,10 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
                     continue;
                 }
 #endif
-                ++i;
             }
+
+            ++i;
+        }
     }
 
     template <typename Func> void eachWithEmpty(Func &&func)
@@ -191,7 +195,7 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
             return nullptr;
         }
 
-        if (id >= m_pointers.size())
+        while (id >= m_pointers.size())
         {
             auto pSize = m_pointers.size();
             auto newSize = pSize > 0 ? pSize + (pSize / 2) : m_resize;
@@ -219,12 +223,11 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
     void erase(Id id1) override
     {
         if (!contains(id1))
-        {
             return;
-        }
 
         auto valIndex = m_pointers[id1];
         auto lastIndex = m_ids.size() - 1;
+
         auto lastId = m_ids[lastIndex];
 
         std::swap(m_values[valIndex], m_values[lastIndex]);
@@ -240,6 +243,23 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
     [[nodiscard]] bool contains(Id id)
     {
         return id < m_pointers.size() && m_pointers[id] != -1;
+    }
+
+    void prune() override
+    {
+        for (auto i = 0; i < m_ids.size();)
+        {
+            if (m_pointers[m_ids[i]] != -1)
+            {
+                if (!m_values[i])
+                {
+                    erase(m_ids[i]);
+                    continue;
+                }
+            }
+                
+            ++i;
+        }
     }
 
   private:

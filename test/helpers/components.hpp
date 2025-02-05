@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../../core.hpp"
+#include "../../example/invaders/core.hpp"
 #include <string>
 
-struct TestEffectCompTimed : public Tags::Effect
+struct TestEffectCompTimed : Tags::Effect, Tags::Stack
 {
     Vector2 vec2{};
     int value{};
@@ -21,10 +21,10 @@ struct TestEffectCompTimed : public Tags::Effect
     }
 };
 
-struct TestEffectComp : public Tags::Effect
+struct TestEffectComp : Tags::Effect, Tags::Stack
 {
-    int value{};
     Vector2 vec2{};
+    int value{};
 
     TestEffectComp()
     {
@@ -34,10 +34,10 @@ struct TestEffectComp : public Tags::Effect
     }
 };
 
-struct TestStackedComp : public Tags::Component
+struct TestStackedComp : Tags::Stack
 {
-    int val{};
     Vector2 vec2{};
+    int val{};
     std::string message{"this is a stacked component"};
 
     TestStackedComp()
@@ -48,16 +48,16 @@ struct TestStackedComp : public Tags::Component
     }
 };
 
-struct TestUniqueComp : public Tags::Unique
+struct TestNonStackedComp : public Tags::NoStack
 {
     int val{};
     Vector2 vec2{};
-    std::string message{"this is a unique component"};
+    std::string message{"this is a non-stacked component"};
 
-    TestUniqueComp()
+    TestNonStackedComp()
     {
     }
-    TestUniqueComp(int v) : val(v)
+    TestNonStackedComp(int v) : val(v)
     {
     }
 };

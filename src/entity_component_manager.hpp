@@ -252,22 +252,8 @@ template <typename EntityId> class EntityComponentManager
         if (iter == getStoredComponents().end())
             return;
 
-        std::vector<EntityId> ids;
         auto &cSet = castErasedTo<T>(iter);
-        cSet.eachWithEmpty([&](EntityId eId, auto &components) {
-            if (!components.size())
-                ids.push_back(eId);
-        });
-
-        if (ids.size() == cSet.size())
-        {
-            getStoredComponents().erase(iter);
-            return;
-        }
-
-        for (const auto &id : ids)
-            cSet.erase(id);
-
+        cSet.prune();
         if (!cSet.size())
             getStoredComponents().erase(iter);
     }
@@ -328,7 +314,7 @@ template <typename EntityId> class EntityComponentManager
     template <typename T, typename... Args> void addComponent(EntityId eId, Args... args)
     {
         ComponentSet<T> &cSet = getComponentSet<T>();
-        ASSERT(!cSet.isLocked(), "Attempt to add to a unique component set for " + getTypeName<T>())
+        ASSERT(!cSet.isLocked(), "Attempt to add to a locked component set for " + getTypeName<T>())
 
         auto comps = cSet.get(eId);
         if (!comps)
@@ -461,7 +447,7 @@ template <typename EntityId> class EntityComponentManager
 
     template <typename T> ComponentSet<T> &castErasedTo(StoredComponents::iterator &iter)
     {
-#ifdef unsafe_casts
+#ifdef ecs_unsafe_casts
         return *static_cast<ComponentSet<T> *>(&getSetFromIterator(iter));
 #else
         auto casted = dynamic_cast<ComponentSet<T> *>(&getSetFromIterator(iter));
@@ -516,13 +502,9 @@ template <typename EntityId> class EntityComponentManager
 #ifdef ecs_allow_experimental
   public:
     /*
-     * !!! CURRENTLY DOES NOT WORK - USE AUTO PRUNE OR MANUAL PRUNING INSTEAD !!!
+     * !!! NEED MORE TESTING TO BE SURE THAT THIS WORKS !!!
      * @brief Iterate over every component set to cleanup empty sets
-     *
-     * Heavy-handed approach.  Iterate over every set and delete the
-     * entire set if all entities are stale.
      */
-    // TODO Task : Make this work. May need to be casted to work properly.
     void pruneAll()
     {
         for (auto iter = getStoredComponents().begin(); iter != getStoredComponents().end();)
@@ -530,19 +512,13 @@ template <typename EntityId> class EntityComponentManager
             std::vector<EntityId> ids;
 
             auto &cSet = getSetFromIterator(iter);
-            cSet.eachWithEmpty([&](EntityId eId, auto &components) {
-                if (!components.size())
-                    ids.push_back(eId);
-            });
+            cSet.prune();
 
-            if (!cSet.size() || ids.size() == cSet.size())
+            if (iter->first, !cSet.size())
             {
                 iter = getStoredComponents().erase(iter);
                 continue;
             }
-
-            for (const auto &id : ids)
-                cSet.erase(id);
 
             ++iter;
         }
@@ -559,7 +535,7 @@ template <typename EntityId> class EntityComponentManager
     }
 
     /*
-     * !!! CAUSES UNDEFINED BEHAVIOR - DO NOT USE !!!
+     * !!! POTENTIALLY CAUSES UNDEFINED BEHAVIOR !!!
      * @brief Iterate over component sets by tag to cleanup empty components
      *
      * Iterate over specific sets by tag to either remove stale entities, or

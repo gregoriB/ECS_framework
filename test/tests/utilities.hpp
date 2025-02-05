@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../core.hpp"
+#include "../../example/invaders/core.hpp"
 #include <cassert>
 #include <string_view>
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../core.hpp"
+#include "../../example/invaders/core.hpp"
 #include "../helpers/components.hpp"
 #include "../helpers/utils.hpp"
 #include <cassert>
@@ -36,7 +36,7 @@ inline void test_benchmark_2M_destroy(ECM &ecm)
     setupBenchmark(ecm, COUNT_2M);
     Timer timer{1};
 
-    for (int i = 0; i < COUNT_2M; ++i)
+    for (int i = 1; i <= COUNT_2M; ++i)
     {
         ecm.clearByEntity<TestVelocityComponent>(i);
         ecm.clearByEntity<TestPositionComponent>(i);
@@ -56,7 +56,7 @@ inline void test_benchmark_2M_get_single_entity_single_type(ECM &ecm)
     setupBenchmark(ecm, COUNT_2M);
     Timer timer{1};
 
-    for (int i = 0; i < COUNT_2M; ++i)
+    for (int i = 1; i <= COUNT_2M; ++i)
     {
         ecm.get<TestVelocityComponent>(i).inspect([&](auto &_) { count1++; });
         ecm.get<TestPositionComponent>(i).inspect([&](auto &_) { count2++; });
@@ -77,7 +77,7 @@ inline void test_benchmark_2M_get_multiple_entities_single_type(ECM &ecm)
     setupBenchmark(ecm, COUNT_2M);
     Timer timer{1};
 
-    for (int i = 0; i < COUNT_2M; ++i)
+    for (int i = 1; i <= COUNT_2M; ++i)
     {
         auto [vel1, vel2] = ecm.get<TestVelocityComponent>(i, i + 1);
         auto [pos1, pos2] = ecm.get<TestPositionComponent>(i + 1, 1);
@@ -102,7 +102,7 @@ inline void test_benchmark_2M_gather(ECM &ecm)
     setupBenchmark(ecm, COUNT_2M);
     Timer timer{1};
 
-    for (int i = 0; i < COUNT_2M; ++i)
+    for (int i = 1; i <= COUNT_2M; ++i)
     {
         auto [velComp, posComp] = ecm.gather<TestVelocityComponent, TestPositionComponent>(1);
         velComp.inspect([&](auto &_) { count1++; });
@@ -170,7 +170,7 @@ inline void test_benchmark_2M_access(ECM &ecm)
     Timer timer{1};
 
     int j{};
-    for (int i = 0; i < COUNT_2M; ++i)
+    for (int i = 1; i <= COUNT_2M; ++i)
     {
         ecm.get<TestVelocityComponent>(i).inspect(
             [&](const TestVelocityComponent &testComp) { j = testComp.x; });
@@ -189,7 +189,7 @@ inline void test_benchmark_2M_update(ECM &ecm)
     setupBenchmark(ecm, COUNT_2M);
     Timer timer{1};
 
-    for (int i = 0; i < COUNT_2M; ++i)
+    for (int i = 1; i <= COUNT_2M; ++i)
     {
         ecm.get<TestVelocityComponent>(i).mutate([&](TestVelocityComponent &testComp) {
             testComp.x = 10.0f;
@@ -212,7 +212,7 @@ inline void test_benchmark_2M_clear(ECM &ecm)
     setupBenchmark(ecm, COUNT_2M);
     Timer timer{1};
 
-    for (int i = 0; i < COUNT_2M; ++i)
+    for (int i = 1; i <= COUNT_2M; ++i)
     {
         ecm.clear<TestVelocityComponent>();
         ecm.clear<TestPositionComponent>();
@@ -229,7 +229,7 @@ inline void test_benchmark_2M_remove(ECM &ecm)
     setupBenchmark(ecm, COUNT_2M);
     Timer timer{1};
 
-    for (int i = 0; i < COUNT_2M; ++i)
+    for (int i = 1; i <= COUNT_2M; ++i)
     {
         ecm.get<TestVelocityComponent>(i).remove([&](const TestVelocityComponent &testComp) { return true; });
         ecm.get<TestPositionComponent>(i).remove([&](const TestPositionComponent &testComp) { return true; });
@@ -246,7 +246,7 @@ inline void test_benchmark_2M_remove_and_auto_prune(ECM &ecm)
     setupBenchmark(ecm, COUNT_2M);
     Timer timer{1};
 
-    for (int i = 0; i < COUNT_2M; ++i)
+    for (int i = 1; i <= COUNT_2M; ++i)
     {
         ecm.get<TestVelocityComponent>(i).remove([&](const TestVelocityComponent &testComp) { return true; });
         ecm.get<TestPositionComponent>(i).remove([&](const TestPositionComponent &testComp) { return true; });

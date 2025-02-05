@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../core.hpp"
+#include "../example/invaders/core.hpp"
 #include "tests/benchmarks.hpp"
 #include "tests/components.hpp"
 #include "tests/utilities.hpp"
@@ -21,15 +21,17 @@ inline std::vector<testFn> componentManagerTests{
     test_component_remove_fn,
     test_component_remove_conditionally,
 
-    /* test_effect_cleanup, */
-    /* test_effect_cleanup_timed, */
-    /* test_effect_cleanup_only_effect_components, */
+#ifdef ecs_allow_experimental
+    test_effect_cleanup,
+    test_effect_cleanup_timed,
+    test_effect_cleanup_only_effect_components,
+#endif
     
     test_get_component,
     test_gather_component,
-
-    test_add_unique_component,
-    test_add_more_unique_components_fail,
+    
+    test_add_non_stack_component,
+    test_add_more_non_stack_components_fail,
     test_add_stacked_components,
     test_add_event_components,
     test_add_effect_components,
@@ -41,10 +43,12 @@ inline std::vector<testFn> componentManagerTests{
     test_prune,
     test_prune_multi,
 
-    /* test_prune_all, */
-    /* test_prune_by_tag, */
+#ifdef ecs_allow_experimental
+    test_prune_all,
+    test_prune_by_tag,
+#endif
 
-#ifndef game_disable_auto_prune
+#ifndef ecs_disable_auto_prune
     test_sparse_set_auto_prune,
     test_sparse_set_auto_prune_after_removal,
 #endif
@@ -69,7 +73,9 @@ inline std::vector<testFn> benchmarkTests{
     test_benchmark_2M_destroy,
     test_benchmark_2M_clear,
     test_benchmark_2M_remove,
+#ifndef ecs_disable_auto_prune
     test_benchmark_2M_remove_and_auto_prune,
+#endif
 };
 
 inline bool runTests(Tests testType) {
@@ -95,7 +101,6 @@ inline bool runTests(Tests testType) {
     {
         auto test = tests[count];
         EntityComponentManager<EntityId> componentManager;
-        ResourceManager resource_manager;
 
         test(componentManager);
 
@@ -109,16 +114,16 @@ inline bool runTests(Tests testType) {
     return true;
 };
 
-inline auto update = [](ECM & ecm, RM & rm) -> bool { 
-#ifndef game_bench_test
+inline void run() { 
+#ifndef ecs_bench_test
     PRINT()
     PRINT("=================== RUNNING COMPONENT MANAGER TESTS ====================")
     PRINT()
     runTests(Tests::COMPONENT_MANAGER);
-#ifdef game_disable_auto_prune
-    PRINT("!! AUTO PRUNE TESTS SKIPPED -- CHECK AUTO PRUNE FLAG: 'game_disable_auto_prune' !!")
+#ifdef ecs_disable_auto_prune
+    PRINT("!! AUTO PRUNE TESTS SKIPPED -- CHECK AUTO PRUNE FLAG: 'ecs_disable_auto_prune' !!")
 #endif
-    return true;
+    return;
 
     PRINT("====================== RUNNING UTILITY TESTS ==========================")
     PRINT()
@@ -129,19 +134,6 @@ inline auto update = [](ECM & ecm, RM & rm) -> bool {
     PRINT()
     runTests(Tests::BENCHMARKS); 
 #endif
-
-    return true;
 };
-
-// Mock system
-inline auto init = [](ECM &ecm, RM &rm) {};
-inline auto getState = [](ECM &ecm) {};
-inline auto setDelta = [](ECM &ecm, float delta) {};
-inline auto handleInputs = [](ECM &ecm, std::vector<Inputs> &inputs) {};
-inline auto checkHealth = []() {};
-inline auto getRenders = [](ECM &ecm, RM &rm) {
-    return std::vector<Renderer::RenderableElement>{};
-};
-
 // clang-format on
 } // namespace TestSystem

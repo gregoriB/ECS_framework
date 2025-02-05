@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../core.hpp"
+#include "../../example/invaders/core.hpp"
 #include <cassert>
 
 inline std::function<void(Tags::Effect &)> markForCleanup = [](Tags::Effect &effect) {
@@ -17,10 +17,14 @@ inline std::function<bool(const Tags::Effect &)> isEffectExpired = [](const Tags
     return false;
 };
 
+template <typename... Components> inline void createAndAdd(ECM &ecm)
+{
+    EntityId id = ecm.createEntity();
+    (ecm.add<Components>(id), ...);
+}
+
 template <typename... Components> inline void createEntityWithComponents(ECM &ecm, int entityCount)
 {
-    for (int i = 0; i < entityCount; ++i)
-    {
+    for (int i = 1; i < entityCount + 1; ++i)
         (ecm.add<Components>(i), ...);
-    }
 }

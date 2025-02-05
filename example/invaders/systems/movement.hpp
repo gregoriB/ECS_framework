@@ -59,10 +59,7 @@ inline void applyMovementEffects(ECM &ecm)
 inline void updateOtherMovement(ECM &ecm)
 {
     ecm.getAll<MovementEvent>().each([&](EId eId, auto &movementEvents) {
-        auto [positionComps, projectileComps, playerComps] =
-            ecm.gather<PositionComponent, ProjectileComponent, PlayerComponent>(eId);
-
-        positionComps.inspect([&](const PositionComponent &positionComp) {
+        ecm.get<PositionComponent>(eId).inspect([&](const PositionComponent &positionComp) {
             auto [gameId, gameComps] = ecm.get<GameComponent>();
             auto &gameBounds = gameComps.peek(&GameComponent::bounds);
             auto [gX, gY, gW, gH] = gameBounds.box();
@@ -71,17 +68,14 @@ inline void updateOtherMovement(ECM &ecm)
             auto [newX, newY, newW, newH] = newBounds.box();
             auto [w, h] = positionComp.bounds.size;
 
-            bool isOutOfBounds = checkOutOfBounds(gameBounds, newBounds);
-            if (isOutOfBounds)
+            if (checkOutOfBounds(gameBounds, newBounds))
             {
-                if (playerComps)
+                // Only projectiles can be out of bounds
+                if (!ecm.get<ProjectileComponent>(eId))
                     return;
 
-                if (projectileComps && (newH < gY || newY > gH))
-                {
+                if (newH < gY || newY > gH)
                     ecm.add<DeathEvent>(eId, 0);
-                    return;
-                }
             }
 
             ecm.add<CollisionCheckEvent>(eId, Bounds{newX, newY, w, h});

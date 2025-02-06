@@ -23,12 +23,8 @@ inline void registerTransformations(ECM &ecm)
     });
 }
 
-inline void stageBuilder(ECM &ecm, const std::vector<std::string_view> &stage)
+inline void stageBuilder(ECM &ecm, const std::vector<std::string_view> &stage, int tileSize)
 {
-    auto [_, gameMetaComps] = ecm.get<GameMetaComponent>();
-    auto &screen = gameMetaComps.peek(&GameMetaComponent::screen);
-    int tileSize = screen.x / stage[0].size();
-
     for (int row = 0; row < stage.size(); ++row)
     {
         for (int col = 0; col < stage[row].size(); ++col)
@@ -42,12 +38,22 @@ inline void stageBuilder(ECM &ecm, const std::vector<std::string_view> &stage)
     }
 };
 
+inline void stageBuilder(ECM &ecm, const std::vector<std::string_view> &stage)
+{
+    auto [_, gameMetaComps] = ecm.get<GameMetaComponent>();
+    auto &size = gameMetaComps.peek(&GameMetaComponent::screen);
+    return stageBuilder(ecm, stage, size.x / stage[0].size());
+}
+
 inline void setup(ECM &ecm, ScreenConfig &screen)
 {
+    auto stage = Stages::getStage(1);
+    int tileSize = screen.width / stage[0].size();
     Vector2 size{static_cast<float>(screen.width), static_cast<float>(screen.height)};
-    createGame(ecm, size);
+
+    createGame(ecm, size, tileSize);
     registerTransformations(ecm);
-    stageBuilder(ecm, Stages::getStage(1));
+    stageBuilder(ecm, stage, tileSize);
 };
 
 inline void nextStage(ECM &ecm, int stage)
@@ -144,4 +150,5 @@ inline std::vector<Renderer::RenderableElement> getRenderableElements(ECM &ecm)
 
     return elements;
 };
+
 }; // namespace Utilties

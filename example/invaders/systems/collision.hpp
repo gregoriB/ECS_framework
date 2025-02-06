@@ -41,8 +41,8 @@ inline void handleCollisions(ECM &ecm)
             if (!isX || !isY)
                 return;
 
-            ecm.add<DeathEvent>(eId1, eId2);
-            ecm.add<DeathEvent>(eId2, eId1);
+            ecm.add<DamageEvent>(eId1, eId2);
+            ecm.add<DamageEvent>(eId2, eId1);
         });
     });
 }

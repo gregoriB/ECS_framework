@@ -271,7 +271,7 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
     size_t m_resize{};
     bool m_isLocked{false};
 
-    std::vector<size_t> m_pointers{};
+    std::vector<int8_t> m_pointers{};
     std::vector<T> m_values{};
     std::vector<Id> m_ids{};
 

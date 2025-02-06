@@ -2,6 +2,7 @@
 
 #include "core.hpp"
 #include "renderer.hpp"
+#include <cstdint>
 
 using NoStack = Tags::NoStack;
 using Stack = Tags::Stack;
@@ -46,6 +47,10 @@ struct RightAlienComponent : Stack
 struct HiveComponent : Unique
 {
     Bounds bounds{};
+};
+
+struct UFOAIComponent
+{
 };
 
 struct HiveAIComponent
@@ -155,6 +160,25 @@ struct PositionEvent : Event, NoStack
     }
 };
 
+struct HealthEvent : Event
+{
+    int32_t amount{};
+
+    HealthEvent(int32_t _amount) : amount(_amount)
+    {
+    }
+};
+
+struct HealthComponent
+{
+    int32_t total{};
+    int32_t current{};
+
+    HealthComponent(int32_t _total) : total(_total), current(_total)
+    {
+    }
+};
+
 struct CollisionCheckEvent : Event, NoStack
 {
     Bounds bounds;
@@ -164,13 +188,17 @@ struct CollisionCheckEvent : Event, NoStack
     }
 };
 
-struct DeathEvent : Event
+struct DamageEvent : Event
 {
     EntityId dealerId;
 
-    DeathEvent(EntityId _dealerId) : dealerId(_dealerId)
+    DamageEvent(EntityId _dealerId) : dealerId(_dealerId)
     {
     }
+};
+
+struct DeathEvent : Event
+{
 };
 
 struct DeathComponent
@@ -215,6 +243,13 @@ struct AttackDelayEffect : Effect
     }
 };
 
+struct UFOTimeoutEffect : Effect, Stack
+{
+    UFOTimeoutEffect(float _duration = 15) : Effect(_duration)
+    {
+    }
+};
+
 struct GameComponent : Required, Unique
 {
     Bounds bounds;
@@ -229,9 +264,10 @@ struct GameComponent : Required, Unique
 struct GameMetaComponent : Required, Unique
 {
     Vector2 screen;
+    int tileSize{};
     float deltaTime{};
 
-    GameMetaComponent(Vector2 _screen) : screen(_screen)
+    GameMetaComponent(Vector2 _screen, int _tileSize) : screen(_screen), tileSize(_tileSize)
     {
     }
 };
@@ -259,6 +295,10 @@ struct SpriteComponent
     SpriteComponent(Renderer::RGBA _rgba) : rgba(_rgba)
     {
     }
+};
+
+struct ObstacleComponent
+{
 };
 
 struct ProjectileComponent

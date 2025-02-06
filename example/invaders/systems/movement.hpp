@@ -70,12 +70,11 @@ inline void updateOtherMovement(ECM &ecm)
 
             if (checkOutOfBounds(gameBounds, newBounds))
             {
-                // Only projectiles can be out of bounds
-                if (!ecm.get<ProjectileComponent>(eId))
+                if (!ecm.get<ProjectileComponent>(eId) && !ecm.get<UFOAIComponent>(eId))
                     return;
 
-                if (newH < gY || newY > gH)
-                    ecm.add<DeathEvent>(eId, 0);
+                if (newH < gY || newY > gH || newW < gX || newX > gW)
+                    ecm.add<DeathEvent>(eId);
             }
 
             ecm.add<CollisionCheckEvent>(eId, Bounds{newX, newY, w, h});

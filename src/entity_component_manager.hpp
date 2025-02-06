@@ -126,8 +126,7 @@ template <typename EntityId> class EntityComponentManager
      */
     template <typename T, typename... Ids> [[nodiscard]] auto get(EntityId id, Ids... ids)
     {
-        auto &cSet = getComponentSet<T>();
-        return getComponentsHelper<T>(cSet, id, ids...);
+        return getComponentsHelper<T>(getComponentSet<T>(), id, ids...);
     }
 
     template <typename... T> [[nodiscard]] std::tuple<Components<T> &...> gather(EntityId eId)
@@ -135,35 +134,18 @@ template <typename EntityId> class EntityComponentManager
         return {getComponents<T>(eId)...};
     }
 
-    template <typename... Components> [[nodiscard]] const std::vector<EntityId> getEntityIds()
+    template <typename T, typename... Ts> [[nodiscard]] const std::vector<EntityId> getEntityIds()
     {
-        if constexpr (sizeof...(Components) == 1)
-            return getComponentSet<Components...>(m_minSetSize).getIds();
+        if constexpr (sizeof...(Ts) == 0)
+            return getComponentSet<T>(m_minSetSize).getIds();
 
-        // TODO Task : Refactor and optimize
-        //
-        // Possible optimizations:
-        // Builds list of component hashes for each id and remove any id which does not have the correct
-        // hashes
-        std::unordered_set<EntityId> ids{};
+        auto &cSet = getComponentSet<T>();
+        std::unordered_set<EntityId> ids(cSet.getIds().begin(), cSet.getIds().end());
         (
             [&]() {
-                auto &cSet = getComponentSet<Components>();
-                for (const auto &id : cSet.getIds())
-                    ids.insert(id);
-            }(),
-            ...);
-
-        (
-            [&]() {
-                auto &cSet = getComponentSet<Components>();
+                auto &cSet = getComponentSet<Ts>();
                 for (auto iter = ids.begin(); iter != ids.end();)
-                {
-                    if (!cSet.contains(*iter))
-                        iter = ids.erase(iter);
-                    else
-                        ++iter;
-                }
+                    iter = cSet.contains(*iter) ? std::next(iter) : ids.erase(iter);
             }(),
             ...);
 

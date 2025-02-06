@@ -14,8 +14,9 @@ namespace Renderer
 {
 struct RGBA
 {
-    uint8_t r, g, b, a;
-    RGBA(uint8_t _r, uint8_t _g, uint8_t _b, uint8_t _a) : r(_r), g(_g), b(_b), a(_a)
+    uint8_t r, g, b;
+    float a;
+    RGBA(uint8_t _r, uint8_t _g, uint8_t _b, float _a) : r(_r), g(_g), b(_b), a(_a)
     {
     }
 };

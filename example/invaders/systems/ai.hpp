@@ -2,12 +2,21 @@
 
 #include "../components.hpp"
 #include "../core.hpp"
+#include "../entities.hpp"
 #include <cstdlib>
 
 namespace Systems::AI
 {
 inline void cleanup(ECM &ecm)
 {
+    auto [gameId, _] = ecm.get<GameComponent>();
+    ecm.get<UFOTimeoutEffect>(gameId).remove([&](auto &effect) { return effect.timer->hasElapsed(); });
+
+    ecm.getAll<AttackDelayEffect>().each([&](EId eId, auto &effects) {
+        effects.remove([&](auto &effect) { return effect.timer->hasElapsed(); });
+    });
+
+    ecm.prune<UFOTimeoutEffect, AttackDelayEffect>();
 }
 
 inline void updateOutsideHiveAliens(ECM &ecm, EId hiveId, const HiveComponent &hiveComp)
@@ -253,10 +262,39 @@ inline void handleAttacks(ECM &ecm)
     ecm.add<AttackDelayEffect>(hiveId, randomDelay);
 }
 
+inline void updateUFO(ECM &ecm)
+{
+    auto [gameId, gameMetaComps] = ecm.get<GameMetaComponent>();
+    if (ecm.get<UFOTimeoutEffect>(gameId))
+        return;
+
+    if (ecm.getAll<UFOAIComponent>())
+        return;
+
+    const float &tileSize = gameMetaComps.peek(&GameMetaComponent::tileSize);
+    createUfo(ecm, 10.0f, tileSize / 2);
+    ecm.add<UFOTimeoutEffect>(gameId);
+}
+
+inline void handleUFOAttacks(ECM &ecm)
+{
+    ecm.getAll<UFOAIComponent>().each([&](EId eId, auto &ufoAiComps) {
+        if (ecm.get<AttackDelayEffect>(eId))
+            return;
+
+        PRINT(eId, "attacking")
+        ecm.add<AttackEvent>(eId);
+        float randomDelay = std::rand() % 5;
+        ecm.add<AttackDelayEffect>(eId, randomDelay);
+    });
+}
+
 inline auto update(ECM &ecm)
 {
     updateHive(ecm);
+    updateUFO(ecm);
     handleAttacks(ecm);
+    handleUFOAttacks(ecm);
 
     return cleanup;
 };

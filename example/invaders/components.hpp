@@ -32,6 +32,53 @@ struct PlayerComponent : Unique
 {
 };
 
+enum class PlayerEvents
+{
+    NONE = 0,
+    NEXT_STAGE,
+    DEATH,
+};
+
+struct PlayerEvent : Event
+{
+    PlayerEvents event;
+
+    PlayerEvent(PlayerEvents _event) : event(_event)
+    {
+    }
+};
+
+struct ScoreComponent
+{
+    int score{};
+};
+
+struct LivesComponent
+{
+    int count{};
+
+    LivesComponent(int _count) : count(_count)
+    {
+    }
+};
+
+struct PlayerScoreCardComponent : Unique
+{
+};
+
+struct PlayerLifeCardComponent : Unique
+{
+};
+
+struct ScoreEvent : Event
+{
+    EntityId pointsId;
+
+    ScoreEvent(EntityId _pointsId) : pointsId(_pointsId)
+    {
+    }
+};
+
 struct AIComponent
 {
 };
@@ -142,6 +189,10 @@ struct MovementEvent : Event
     }
 };
 
+struct CollidableComponent
+{
+};
+
 struct PositionComponent : Transform
 {
     Bounds bounds;
@@ -162,9 +213,10 @@ struct PositionEvent : Event, NoStack
 
 struct HealthEvent : Event
 {
+    EntityId dealerId;
     int32_t amount{};
 
-    HealthEvent(int32_t _amount) : amount(_amount)
+    HealthEvent(int32_t _amount, EntityId _dealerId = 0) : amount(_amount), dealerId(_dealerId)
     {
     }
 };
@@ -199,6 +251,11 @@ struct DamageEvent : Event
 
 struct DeathEvent : Event
 {
+    EntityId killedBy;
+
+    DeathEvent(EntityId _killedBy = 0) : killedBy(_killedBy)
+    {
+    }
 };
 
 struct DeathComponent
@@ -225,27 +282,32 @@ struct AttackComponent
 
 struct AttackEvent : Event
 {
+    float timeout;
+
+    AttackEvent(float _timeout = 0) : timeout(_timeout)
+    {
+    }
 };
 
 struct AttackEffect : Effect, Stack
 {
     EntityId attackId;
 
-    AttackEffect(EntityId _attackId) : attackId(_attackId)
+    AttackEffect(EntityId _attackId, float _timeout = 0) : attackId(_attackId), Effect(_timeout)
     {
     }
 };
 
-struct AttackDelayEffect : Effect
+struct AITimeoutEffect : Effect, Stack
 {
-    AttackDelayEffect(float _duration) : Effect(_duration)
+    AITimeoutEffect(float _duration) : Effect(_duration)
     {
     }
 };
 
 struct UFOTimeoutEffect : Effect, Stack
 {
-    UFOTimeoutEffect(float _duration = 15) : Effect(_duration)
+    UFOTimeoutEffect(float _duration) : Effect(_duration)
     {
     }
 };
@@ -297,15 +359,47 @@ struct SpriteComponent
     }
 };
 
+struct UIComponent
+{
+};
+
+enum class UIEvents
+{
+    NONE = 0,
+    UPDATE_SCORE,
+    UPDATE_LIVES,
+};
+
+struct UIEvent : Event
+{
+    UIEvents event;
+
+    UIEvent(UIEvents _event) : event(_event)
+    {
+    }
+};
+
+struct TextComponent
+{
+    std::string text{};
+    Renderer::RGBA color;
+
+    TextComponent(std::string _text, Renderer::RGBA _color = Renderer::RGBA{255, 255, 255, 255})
+        : text(_text), color(_color)
+    {
+    }
+};
+
 struct ObstacleComponent
 {
 };
 
 struct ProjectileComponent
 {
+    EntityId shooterId;
     Movements movement;
 
-    ProjectileComponent(Movements _movement) : movement(_movement)
+    ProjectileComponent(EntityId _shooterId, Movements _movement) : shooterId(_shooterId), movement(_movement)
     {
     }
 };

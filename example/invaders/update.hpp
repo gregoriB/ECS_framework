@@ -13,6 +13,8 @@
 #include "systems/movement.hpp"
 #include "systems/player.hpp"
 #include "systems/position.hpp"
+#include "systems/score.hpp"
+#include "systems/ui.hpp"
 
 #include <functional>
 
@@ -31,7 +33,7 @@ template <typename CleanupFuncs> inline void cleanup(ECM &ecm, CleanupFuncs &cle
 inline bool run(ECM &ecm)
 {
     // clang-format off
-    std::array<CleanupFunc, 11> cleanupFuncs{
+    std::array<CleanupFunc, 13> cleanupFuncs{
         Systems::AI::update(ecm),
         Systems::Input::update(ecm),
         Systems::Attack::update(ecm),
@@ -41,7 +43,9 @@ inline bool run(ECM &ecm)
         Systems::Damage::update(ecm),
         Systems::Health::update(ecm),
         Systems::Death::update(ecm),
+        Systems::Score::update(ecm),
         Systems::Player::update(ecm),
+        Systems::UI::update(ecm),
         Systems::Game::update(ecm),
     };
 

@@ -138,7 +138,7 @@ template <typename T> class Components
      * @return Property reference
      */
     template <typename Prop>
-    [[nodiscard]] const Prop &peek(Prop T::*prop, Transformation behavior = Transformation::DEFAULT)
+    [[nodiscard]] const Prop &peek(Transformation behavior, Prop T::*prop)
         requires(!Tags::shouldStack<T>())
     {
         static_assert(!Tags::shouldStack<T>(), "Cannot use peek method with a stacked component");
@@ -149,6 +149,31 @@ template <typename T> class Components
         handleTransformations(behavior);
 
         return (*begin()).*prop;
+    }
+
+    template <typename Prop>
+    [[nodiscard]] const Prop &peek(Prop T::*prop)
+        requires(!Tags::shouldStack<T>())
+    {
+        return peek(Transformation::DEFAULT, prop);
+    }
+
+    template <typename... Props>
+    [[nodiscard]] auto peek(Transformation behavior, Props T::*...props)
+        requires(!Tags::shouldStack<T>())
+    {
+        ASSERT(!isEmpty(), "One or more properties could not be peeked from Component: " + getTypeName<T>());
+
+        handleTransformations(behavior);
+
+        return std::make_tuple((*begin()).*props...);
+    }
+
+    template <typename... Props>
+    [[nodiscard]] auto peek(Props T::*...props)
+        requires(!Tags::shouldStack<T>())
+    {
+        return peek(Transformation::DEFAULT, props...);
     }
 
     /**

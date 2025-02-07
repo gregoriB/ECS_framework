@@ -11,10 +11,35 @@ inline void cleanup(ECM &ecm)
 
 inline auto update(ECM &ecm)
 {
-    // get player events
-    // check for death
-    // // create game over event if no lives
-    // // remove life are if lives
+    auto [playerId, playerComps] = ecm.get<PlayerComponent>();
+
+    ecm.getAll<PlayerEvent>().each([&](EId eId, auto &playerEvents) {
+        playerEvents.inspect([&](const PlayerEvent &playerEvent) {
+            using Event = decltype(playerEvent.event);
+            switch (playerEvent.event)
+            {
+            case Event::DEATH: {
+                auto &livesComps = ecm.get<LivesComponent>(playerId);
+                livesComps.mutate([&](LivesComponent &livesComp) { --livesComp.count; });
+                auto &lifeCount = livesComps.peek(&LivesComponent::count);
+                if (lifeCount <= 0)
+                    ecm.add<GameEvent>(eId, GameEvents::GAME_OVER);
+                else
+                    ecm.add<UIEvent>(eId, UIEvents::UPDATE_LIVES);
+
+                break;
+            }
+            case Event::NEXT_STAGE: {
+                ecm.get<LivesComponent>(playerId).mutate(
+                    [&](LivesComponent &livesComp) { ++livesComp.count; });
+
+                break;
+            }
+            default:
+                break;
+            }
+        });
+    });
 
     return cleanup;
 };

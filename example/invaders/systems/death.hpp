@@ -7,20 +7,32 @@ namespace Systems::Death
 {
 inline void cleanup(ECM &ecm)
 {
+    auto deadIds = ecm.getEntityIds<DeathComponent>();
+    for (const auto &id : deadIds)
+        ecm.clearEntity(id);
 }
 
 inline auto update(ECM &ecm)
 {
     std::vector<EntityId> ids{};
     ecm.getAll<DeathEvent>().each([&](EId eId, auto &deathEvents) {
-        if (ecm.get<PlayerComponent>(eId))
-            ecm.add<GameEvent>(eId, GameEvents::GAME_OVER);
+        auto [playerId, _] = ecm.get<PlayerComponent>();
+        if (eId == playerId)
+        {
+            ecm.add<PlayerEvent>(eId, PlayerEvents::DEATH);
+            return;
+        }
 
-        ids.push_back(eId);
+        deathEvents.inspect([&](const DeathEvent &deathEvent) {
+            auto &pointsComps = ecm.get<PointsComponent>(eId);
+            if (!pointsComps)
+                return;
+
+            ecm.add<ScoreEvent>(deathEvent.killedBy, eId);
+        });
+
+        ecm.add<DeathComponent>(eId);
     });
-
-    for (auto &id : ids)
-        ecm.clearEntity(id);
 
     return cleanup;
 };

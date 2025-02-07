@@ -19,11 +19,13 @@ inline auto update(ECM &ecm)
                 switch (gameEvent.event)
                 {
                 case GameEvents::QUIT: {
+                    PRINT("GAME QUIT")
                     gameComps.mutate([&](GameComponent &gameComp) { gameComp.isGameOver = true; });
                     break;
                 }
                 case GameEvents::GAME_OVER:
                     PRINT("GAME OVER")
+                    gameComps.mutate([&](GameComponent &gameComp) { gameComp.isGameOver = true; });
                     break;
                 case GameEvents::NEXT_STAGE:
                     PRINT("STAGE CLEARED!!")

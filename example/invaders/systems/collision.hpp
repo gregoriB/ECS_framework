@@ -25,10 +25,11 @@ inline void handleCollisions(ECM &ecm)
         auto [projectileComps1, playerComps1, hiveAiComps1] =
             ecm.gather<ProjectileComponent, PlayerComponent, HiveAIComponent>(eId1);
         auto [cX, cY, cW, cH] = checkEvents.peek(&CollisionCheckEvent::bounds).box();
-        ecm.getAll<PositionComponent>().each([&](EId eId2, auto &positionComps) {
+        ecm.getAll<CollidableComponent>().each([&](EId eId2, auto &collidableComps) {
             if (eId1 == eId2)
                 return;
 
+            auto &positionComps = ecm.get<PositionComponent>(eId2);
             auto [projectileComps2, playerComps2, hiveAiComps2] =
                 ecm.gather<ProjectileComponent, PlayerComponent, HiveAIComponent>(eId2);
             if (checkForFriendlyFire(ecm, projectileComps2, playerComps1, hiveAiComps1) ||
@@ -41,8 +42,10 @@ inline void handleCollisions(ECM &ecm)
             if (!isX || !isY)
                 return;
 
-            ecm.add<DamageEvent>(eId1, eId2);
-            ecm.add<DamageEvent>(eId2, eId1);
+            EId dealer1 = projectileComps1 ? projectileComps1.peek(&ProjectileComponent::shooterId) : eId1;
+            EId dealer2 = projectileComps2 ? projectileComps2.peek(&ProjectileComponent::shooterId) : eId2;
+            ecm.add<DamageEvent>(eId1, dealer2);
+            ecm.add<DamageEvent>(eId2, dealer1);
         });
     });
 }

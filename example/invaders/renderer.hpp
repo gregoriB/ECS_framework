@@ -3,20 +3,24 @@
 #include "core.hpp"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 #include <SDL_render.h>
 #include <SDL_stdinc.h>
 #include <SDL_timer.h>
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
+#include <string_view>
 
 namespace Renderer
 {
 struct RGBA
 {
-    uint8_t r, g, b;
-    float a;
-    RGBA(uint8_t _r, uint8_t _g, uint8_t _b, float _a) : r(_r), g(_g), b(_b), a(_a)
+    uint8_t r, g, b, a;
+    RGBA() : r(0), g(0), b(0), a(255)
+    {
+    }
+    RGBA(uint8_t _r, uint8_t _g, uint8_t _b, uint8_t _a) : r(_r), g(_g), b(_b), a(_a)
     {
     }
 };
@@ -25,9 +29,10 @@ struct RenderableElement
 {
     float x, y, w, h;
     RGBA rgba;
+    std::string_view text;
 
-    RenderableElement(float _x, float _y, float _w, float _h, RGBA _rgba)
-        : x(_x), y(_y), w(_w), h(_h), rgba(_rgba)
+    RenderableElement(float _x, float _y, float _w, float _h, RGBA _rgba, std::string_view _text = "")
+        : x(_x), y(_y), w(_w), h(_h), rgba(_rgba), text(_text)
     {
     }
 };
@@ -44,8 +49,11 @@ template <typename EntityId> class Manager
         exit();
     }
 
+    TTF_Font *m_font;
     bool init()
     {
+        TTF_Init();
+        m_font = TTF_OpenFont("/home/brandon/coding/cpp/ecs_library/example/invaders/assets/font.ttf", 24);
         if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
         {
             printError("Could not initialize renderer");
@@ -72,7 +80,7 @@ template <typename EntityId> class Manager
             exit();
             return false;
         }
-
+        SDL_SetRenderDrawBlendMode(m_renderer, SDL_BLENDMODE_BLEND);
         SDL_SetRenderDrawColor(m_renderer, 0xFF, 0xFF, 0xFF, 0xFF);
 
         return true;
@@ -115,10 +123,41 @@ template <typename EntityId> class Manager
         SDL_RenderClear(m_renderer);
     }
 
+    void renderText(SDL_Renderer *renderer, const RenderableElement &re, const SDL_Rect &rect)
+    {
+        const auto &text = re.text;
+        auto [r, g, b, a] = re.rgba;
+        SDL_Color color = {r, g, b, a};
+
+        if (text.empty() || !m_font)
+            return;
+
+        SDL_Surface *surface = TTF_RenderText_Solid(m_font, text.data(), color);
+        if (!surface)
+            return;
+
+        SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+        if (!texture)
+        {
+            SDL_FreeSurface(surface);
+            return;
+        }
+
+        SDL_Rect textRect = {rect.x, rect.y + (rect.h - surface->h) / 2, surface->w, surface->h};
+        SDL_RenderCopy(renderer, texture, nullptr, &textRect);
+        SDL_DestroyTexture(texture);
+        SDL_FreeSurface(surface);
+    }
+
     void renderTile(const RenderableElement &re)
     {
         auto tile = createRectangle(re.x, re.y, re.w, re.h);
-        setRenderColor(re.rgba);
+        if (re.text.empty())
+            setRenderColor(re.rgba);
+        else
+            setInvisibleRenderColor();
+
+        renderText(m_renderer, re, tile);
         renderSolidRect(tile);
     }
 
@@ -131,6 +170,11 @@ template <typename EntityId> class Manager
     {
         auto [r, g, b, a] = rgba;
         SDL_SetRenderDrawColor(m_renderer, r, g, b, a);
+    }
+
+    void setInvisibleRenderColor()
+    {
+        SDL_SetRenderDrawColor(m_renderer, 0, 0, 0, 0);
     }
 
     SDL_Rect createRectangle(int x, int y, int w, int h)

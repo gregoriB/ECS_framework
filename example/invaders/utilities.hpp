@@ -5,8 +5,10 @@
 #include "entities.hpp"
 #include "renderer.hpp"
 #include "stages.hpp"
+#include "ui.hpp"
 #include <functional>
 #include <string_view>
+#include <tuple>
 
 namespace Utilties
 {
@@ -38,6 +40,21 @@ inline void stageBuilder(ECM &ecm, const std::vector<std::string_view> &stage, i
     }
 };
 
+inline void uiBuilder(ECM &ecm, const std::vector<std::string_view> &ui, int tileSize)
+{
+    for (int row = 0; row < ui.size(); ++row)
+    {
+        for (int col = 0; col < ui[row].size(); ++col)
+        {
+            auto constructor = UI::getEntityConstructor(ui[row][col]);
+            if (!constructor)
+                continue;
+
+            constructor(ecm, col * tileSize, row * tileSize, tileSize, tileSize);
+        }
+    }
+};
+
 inline void stageBuilder(ECM &ecm, const std::vector<std::string_view> &stage)
 {
     auto [_, gameMetaComps] = ecm.get<GameMetaComponent>();
@@ -54,6 +71,8 @@ inline void setup(ECM &ecm, ScreenConfig &screen)
     createGame(ecm, size, tileSize);
     registerTransformations(ecm);
     stageBuilder(ecm, stage, tileSize);
+    auto ui = UI::getUI(1);
+    uiBuilder(ecm, ui, tileSize);
 };
 
 inline void nextStage(ECM &ecm, int stage)
@@ -141,14 +160,46 @@ inline bool getGameoverState(ECM &ecm)
 
 inline std::vector<Renderer::RenderableElement> getRenderableElements(ECM &ecm)
 {
-    std::vector<Renderer::RenderableElement> elements{};
+    std::vector<Renderer::RenderableElement> worldElements{};
+    std::vector<Renderer::RenderableElement> uiElements{};
+
     ecm.getAll<SpriteComponent>().each([&](EId eId, auto &spriteComps) {
         auto &rgba = spriteComps.peek(&SpriteComponent::rgba);
         auto [x, y, w, h] = ecm.get<PositionComponent>(eId).peek(&PositionComponent::bounds).get();
-        elements.emplace_back(x, y, w, h, rgba);
+        Renderer::RenderableElement renderEl{x, y, w, h, rgba};
+        auto &uiComps = ecm.get<UIComponent>(eId);
+        auto &vec = !!uiComps ? uiElements : worldElements;
+        if (uiComps)
+        {
+            auto &textComps = ecm.get<TextComponent>(eId);
+            textComps.inspect([&](const TextComponent &textComp) {
+                renderEl.text = textComp.text;
+                renderEl.rgba = Renderer::RGBA{255, 255, 255, 255};
+            });
+        }
+
+        vec.push_back(std::move(renderEl));
     });
 
-    return elements;
+    worldElements.insert(worldElements.end(), uiElements.begin(), uiElements.end());
+    return worldElements;
 };
+
+inline template <typename... Ts> void cleanupEffect(ECM &ecm)
+{
+    std::apply(
+        [&](auto &...set) {
+            (set.each([&](EId eId, auto &effects) {
+                effects.remove([&](auto &effect) {
+                    if (effect.timer.has_value() && effect.timer->hasElapsed())
+                        return true;
+
+                    return effect.cleanup;
+                });
+            }),
+             ...);
+        },
+        ecm.gatherAll<Ts...>());
+}
 
 }; // namespace Utilties

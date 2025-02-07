@@ -53,12 +53,14 @@ list(APPEND ECS_FLAGS ${ECS_FLAGS_DEBUG})
 # Link libraries
 find_package(SDL2 REQUIRED)
 find_package(SDL2_image REQUIRED)
+find_package(SDL_ttf REQUIRED)
+set(TTF_LIBS SDL2_ttf)
 
 # Create the executable
 add_executable(main ${SOURCES})
 
 # Link the libraries
-target_link_libraries(main SDL2::SDL2 SDL2_image::SDL2_image)
+target_link_libraries(main SDL2::SDL2 SDL2_image::SDL2_image SDL2_ttf)
 # Apply compiler flags to the target
 target_compile_options(main PRIVATE ${ECS_FLAGS})
 

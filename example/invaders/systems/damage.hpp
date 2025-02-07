@@ -18,7 +18,7 @@ inline auto update(ECM &ecm)
                 return;
 
             auto &amount = damageComps.peek(&DamageComponent::amount);
-            ecm.add<HealthEvent>(eId, -1 * amount);
+            ecm.add<HealthEvent>(eId, -1 * amount, damageEvent.dealerId);
         });
     });
 

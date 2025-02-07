@@ -21,7 +21,7 @@ inline void movePlayer(ECM &ecm)
             switch (inputEvent.action)
             {
             case Actions::SHOOT:
-                ecm.add<AttackEvent>(eId);
+                ecm.add<AttackEvent>(eId, 3);
                 break;
             case Actions::QUIT: {
                 auto [gameId, _] = ecm.get<GameComponent>();

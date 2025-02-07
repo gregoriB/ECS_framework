@@ -18,7 +18,7 @@ inline auto update(ECM &ecm)
             healthComps.mutate([&](HealthComponent &healthComp) {
                 healthComp.current += healthEvent.amount;
                 if (healthComp.current <= 0)
-                    ecm.add<DeathEvent>(eId);
+                    ecm.add<DeathEvent>(eId, healthEvent.dealerId);
 
                 auto &obstacleComps = ecm.get<ObstacleComponent>(eId);
                 if (!obstacleComps)

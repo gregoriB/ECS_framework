@@ -8,6 +8,7 @@ namespace Systems::Movement
 {
 inline void cleanup(ECM &ecm)
 {
+    Utilties::cleanupEffect<MovementEffect>(ecm);
 }
 
 inline auto checkOutOfBounds(const Bounds &countainer, const Bounds &subject)
@@ -34,26 +35,26 @@ inline Bounds calculateNewBounds(auto &movementEvents, const PositionComponent &
 inline void applyMovementEffects(ECM &ecm)
 {
     auto dt = Utilties::getDeltaTime(ecm);
-    ecm.getAll<MovementEffect>().each([&](EId eId, auto &movementEffects) {
-        movementEffects.inspect([&](const MovementEffect &movementEffect) {
-            auto [movementComps, positionComps] = ecm.gather<MovementComponent, PositionComponent>(eId);
-            auto &speeds = movementComps.peek(&MovementComponent::speeds);
-            auto &position = positionComps.peek(&PositionComponent::bounds).position;
-            auto &targetPos = movementEffect.trajectory;
+    ecm.gatherGroup<MovementEffect, MovementComponent, PositionComponent>().each(
+        [&](EId eId, auto &movementEffects, auto &movementComps, auto &positionComps) {
+            movementEffects.inspect([&](const MovementEffect &movementEffect) {
+                auto &speeds = movementComps.peek(&MovementComponent::speeds);
+                auto &position = positionComps.peek(&PositionComponent::bounds).position;
+                auto &targetPos = movementEffect.trajectory;
 
-            // clang-format off
+                // clang-format off
             Vector2 diff{position.x - targetPos.x, position.y - targetPos.y};
             Vector2 directions{
                 diff.x < 0 ? 1.0f : diff.x > 0 ? -1.0f : 0,
                 diff.y < 0 ? 1.0f : diff.y > 0 ? -1.0f : 0,
             };
-            // clang-format on
+                // clang-format on
 
-            auto xMove = speeds.x * dt;
-            auto yMove = speeds.y * dt;
-            ecm.add<MovementEvent>(eId, Vector2{xMove * directions.x, yMove * directions.y});
+                auto xMove = speeds.x * dt;
+                auto yMove = speeds.y * dt;
+                ecm.add<MovementEvent>(eId, Vector2{xMove * directions.x, yMove * directions.y});
+            });
         });
-    });
 }
 
 inline void updateOtherMovement(ECM &ecm)
@@ -68,17 +69,22 @@ inline void updateOtherMovement(ECM &ecm)
             auto [newX, newY, newW, newH] = newBounds.box();
             auto [w, h] = positionComp.bounds.size;
 
+            // TODO Task : Move boundary checks to collision system
             if (checkOutOfBounds(gameBounds, newBounds))
             {
                 if (!ecm.get<ProjectileComponent>(eId) && !ecm.get<UFOAIComponent>(eId))
                     return;
 
                 if (newH < gY || newY > gH || newW < gX || newX > gW)
+                {
                     ecm.add<DeathEvent>(eId);
+                    return;
+                }
             }
 
-            ecm.add<CollisionCheckEvent>(eId, Bounds{newX, newY, w, h});
-            ecm.add<PositionEvent>(eId, Vector2{newX, newY});
+            Vector2 newPos{newX, newY};
+            ecm.add<CollisionCheckEvent>(eId, Bounds{newPos, Vector2{w, h}});
+            ecm.add<PositionEvent>(eId, std::move(newPos));
         });
     });
 }

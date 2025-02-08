@@ -235,7 +235,7 @@ inline void handleHiveAttack(ECM &ecm)
         ecm.clearByEntity<AITimeoutEffect>(hiveId);
     }
 
-    auto attackingAIs = ecm.getEntityIds<HiveAIComponent, AttackEffect>();
+    auto &attackingAIs = ecm.getEntityIds<HiveAIComponent, AttackEffect>();
     if (attackingAIs.size() >= 3)
         return;
 

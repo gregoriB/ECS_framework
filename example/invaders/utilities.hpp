@@ -163,23 +163,24 @@ inline std::vector<Renderer::RenderableElement> getRenderableElements(ECM &ecm)
     std::vector<Renderer::RenderableElement> worldElements{};
     std::vector<Renderer::RenderableElement> uiElements{};
 
-    ecm.getAll<SpriteComponent>().each([&](EId eId, auto &spriteComps) {
-        auto &rgba = spriteComps.peek(&SpriteComponent::rgba);
-        auto [x, y, w, h] = ecm.get<PositionComponent>(eId).peek(&PositionComponent::bounds).get();
-        Renderer::RenderableElement renderEl{x, y, w, h, rgba};
-        auto &uiComps = ecm.get<UIComponent>(eId);
-        auto &vec = !!uiComps ? uiElements : worldElements;
-        if (uiComps)
-        {
-            auto &textComps = ecm.get<TextComponent>(eId);
-            textComps.inspect([&](const TextComponent &textComp) {
-                renderEl.text = textComp.text;
-                renderEl.rgba = Renderer::RGBA{255, 255, 255, 255};
-            });
-        }
+    ecm.gatherGroup<SpriteComponent, PositionComponent>().each(
+        [&](EId eId, auto &spriteComps, auto &positionComps) {
+            auto &rgba = spriteComps.peek(&SpriteComponent::rgba);
+            auto [x, y, w, h] = positionComps.peek(&PositionComponent::bounds).get();
+            Renderer::RenderableElement renderEl{x, y, w, h, rgba};
+            auto &uiComps = ecm.get<UIComponent>(eId);
+            auto &vec = !!uiComps ? uiElements : worldElements;
+            if (uiComps)
+            {
+                auto &textComps = ecm.get<TextComponent>(eId);
+                textComps.inspect([&](const TextComponent &textComp) {
+                    renderEl.text = textComp.text;
+                    renderEl.rgba = Renderer::RGBA{255, 255, 255, 255};
+                });
+            }
 
-        vec.push_back(std::move(renderEl));
-    });
+            vec.push_back(std::move(renderEl));
+        });
 
     worldElements.insert(worldElements.end(), uiElements.begin(), uiElements.end());
     return worldElements;

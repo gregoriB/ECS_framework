@@ -5,12 +5,46 @@
 #include "sparse_set.hpp"
 #include "tags.hpp"
 #include "utilities.hpp"
+#include <unordered_set>
+
+template <typename EntityId, typename... Ts> class Grouping
+{
+  private:
+    std::vector<EntityId> m_ids;
+    std::tuple<Ts *...> m_values;
+
+  public:
+    Grouping(std::vector<EntityId> _ids = {}) {};
+    Grouping(std::vector<EntityId> _ids, std::tuple<Ts *...> _values) : m_ids(_ids), m_values(_values) {};
+    template <typename Func> void each(Func &&fn) const
+    {
+        for (const auto &id : m_ids)
+            // TODO Safety : Add null set check and handling
+            fn(id, *std::get<Ts *>(m_values)->get(id)...);
+    }
+
+    [[nodiscard]] size_t size() const
+    {
+        return m_ids.size();
+    }
+
+    [[nodiscard]] explicit operator bool() const
+    {
+        return !!size();
+    }
+
+    [[nodiscard]] const std::vector<EntityId> &getIds() const
+    {
+        return m_ids;
+    }
+};
 
 template <typename EntityId> class EntityComponentManager
 {
   private:
     template <typename T> using ComponentSet = SparseSet<EntityId, Components<T>>;
     template <typename T> using ComponentSetMap = std::unordered_map<size_t, std::unique_ptr<T>>;
+    template <typename... Ts> using ComponentSetGroup = Grouping<EntityId, ComponentSet<Ts>...>;
 
     using ErasedComponent = Components<DefaultComponent>;
     using ErasedComponentSet = BaseSparseSet<EntityId, ErasedComponent>;
@@ -144,6 +178,7 @@ template <typename EntityId> class EntityComponentManager
         (
             [&]() {
                 auto &cSet = getComponentSet<Ts>();
+                cSet.prune();
                 for (auto iter = ids.begin(); iter != ids.end();)
                     iter = cSet.contains(*iter) ? std::next(iter) : ids.erase(iter);
             }(),
@@ -152,22 +187,56 @@ template <typename EntityId> class EntityComponentManager
         return std::vector<EntityId>(ids.begin(), ids.end());
     }
 
+    template <typename... Ts> ComponentSetGroup<Ts...> gatherGroup()
+    {
+        bool shouldBreak{};
+        std::tuple<ComponentSet<Ts> *...> sets{};
+        std::unordered_set<EntityId> ids{};
+        (
+            [&]() {
+                if (shouldBreak)
+                    return;
+
+                auto &cSet = getComponentSet<Ts>();
+                if (ids.empty())
+                    ids = std::unordered_set<EntityId>(cSet.getIds().begin(), cSet.getIds().end());
+                else
+                {
+                    // TODO Task : Reevalue auto-pruning on the component set .contains(id) call instead
+                    cSet.prune();
+                    for (auto iter = ids.begin(); iter != ids.end();)
+                        iter = cSet.contains(*iter) ? std::next(iter) : ids.erase(iter);
+                }
+
+                if (!ids.empty())
+                    std::get<ComponentSet<Ts> *>(sets) = &cSet;
+                else
+                    shouldBreak = true;
+            }(),
+            ...);
+
+        if (ids.empty())
+            return ComponentSetGroup<Ts...>();
+
+        return ComponentSetGroup<Ts...>(std::vector<EntityId>(ids.begin(), ids.end()), std::move(sets));
+    }
+
     template <typename T> [[nodiscard]] ComponentSet<T> &getAll()
     {
         return getComponentSet<T>(m_minSetSize);
     }
 
-    template <typename... T> [[nodiscard]] std::tuple<ComponentSet<T> &...> gatherAll()
+    template <typename... Ts> [[nodiscard]] std::tuple<ComponentSet<Ts> &...> gatherAll()
     {
-        return {getComponentSet<T>(m_minSetSize)...};
+        return {getComponentSet<Ts>(m_minSetSize)...};
     }
 
-    template <typename... Components> void clear()
+    template <typename... Ts> void clear()
     {
 #ifdef ecs_allow_debug
-        (debugCheckRequired<Components>("Clear"), ...);
+        (debugCheckRequired<Ts>("Clear"), ...);
 #endif
-        clearComponents<Components...>();
+        clearComponents<Ts...>();
     }
 
     template <typename Tag> void clearByTag()
@@ -175,12 +244,12 @@ template <typename EntityId> class EntityComponentManager
         clearComponentsByTag<Tag>();
     }
 
-    template <typename... Components> void clearByEntity(EntityId eId)
+    template <typename... Ts> void clearByEntity(EntityId eId)
     {
 #ifdef ecs_allow_debug
-        (debugCheckRequired<Components>("Clear by entity"), ...);
+        (debugCheckRequired<Ts>("Clear by entity"), ...);
 #endif
-        clearEntityComponent<Components...>(eId);
+        clearEntityComponent<Ts...>(eId);
     }
 
     void clearEntity(EntityId eId)
@@ -189,9 +258,9 @@ template <typename EntityId> class EntityComponentManager
             getSetFromIterator(iter).erase(eId);
     }
 
-    template <typename... Components> void prune()
+    template <typename... Ts> void prune()
     {
-        (prune<Components>(getComponentHash<Components>()), ...);
+        (prune<Ts>(getComponentHash<Ts>()), ...);
     }
 
     template <typename T> constexpr void registerTransformation(TransformationFn<T> transformationFn)
@@ -389,9 +458,9 @@ template <typename EntityId> class EntityComponentManager
         }
     }
 
-    template <typename... Components> void clearComponents()
+    template <typename... Ts> void clearComponents()
     {
-        (getStoredComponents().erase(getComponentHash<Components>()), ...);
+        (getStoredComponents().erase(getComponentHash<Ts>()), ...);
     }
 
     template <typename Tag> void clearComponentsByTag()
@@ -409,10 +478,10 @@ template <typename EntityId> class EntityComponentManager
         }
     }
 
-    template <typename... Components> void clearEntityComponent(EntityId eId)
+    template <typename... Ts> void clearEntityComponent(EntityId eId)
     {
         // TODO Performance : See if there better way to do this
-        (getComponentSet<Components>(m_minSetSize).erase(eId), ...);
+        (getComponentSet<Ts>(m_minSetSize).erase(eId), ...);
     }
 
     template <typename Tag, typename Func> void eachComponentByTag(Func fn)

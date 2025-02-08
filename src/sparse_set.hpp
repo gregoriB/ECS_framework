@@ -35,6 +35,7 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
 {
   public:
     template <typename EntityId> friend class EntityComponentManager;
+    template <typename EntityId, typename... Ts> friend class Grouping;
 
     explicit SparseSet(size_t _initialSize, size_t _resize) : m_resize(_resize)
     {
@@ -268,6 +269,7 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
     }
 
   private:
+    using value_type = T;
     size_t m_resize{};
     bool m_isLocked{false};
 

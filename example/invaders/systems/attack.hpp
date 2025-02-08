@@ -54,13 +54,12 @@ inline void processAttacks(ECM &ecm)
             ecm.add<AttackEffect>(eId, projectileId, attackEvent.timeout);
         });
     });
-
-    updateAttackEffect(ecm);
 }
 
 inline auto update(ECM &ecm)
 {
     processAttacks(ecm);
+    updateAttackEffect(ecm);
 
     return cleanup;
 };

@@ -16,6 +16,7 @@ template <typename EntityId, typename... Ts> class Grouping
   public:
     Grouping(std::vector<EntityId> _ids = {}) {};
     Grouping(std::vector<EntityId> _ids, std::tuple<Ts *...> _values) : m_ids(_ids), m_values(_values) {};
+
     template <typename Func> void each(Func &&fn) const
     {
         for (const auto &id : m_ids)
@@ -199,7 +200,10 @@ template <typename EntityId> class EntityComponentManager
 
                 auto &cSet = getComponentSet<Ts>();
                 if (ids.empty())
-                    ids = std::unordered_set<EntityId>(cSet.getIds().begin(), cSet.getIds().end());
+                {
+                    auto &entityIds = cSet.getIds();
+                    ids = std::unordered_set<EntityId>(entityIds.begin(), entityIds.end());
+                }
                 else
                 {
                     // TODO Task : Reevalue auto-pruning on the component set .contains(id) call instead
@@ -250,6 +254,24 @@ template <typename EntityId> class EntityComponentManager
         (debugCheckRequired<Ts>("Clear by entity"), ...);
 #endif
         clearEntityComponent<Ts...>(eId);
+    }
+
+    template <typename... Ts> void clearEntities()
+    {
+        // TODO Performance : Use a less heavy-handed approach
+        (
+            [&]() {
+                auto &ids = getEntityIds<Ts>();
+                for (const auto &id : ids)
+                    clearEntity(id);
+            }(),
+            ...);
+    }
+
+    template <typename... Ids> void clearEntities(Ids... ids)
+    {
+        // TODO Performance : Use a less heavy-handed approach
+        (clearEntity(ids), ...);
     }
 
     void clearEntity(EntityId eId)
@@ -353,7 +375,6 @@ template <typename EntityId> class EntityComponentManager
             createComponentSet<T>(maxSize);
             iter = getStoredComponents().find(hash);
         }
-
         return castErasedTo<T>(iter);
     }
 
@@ -371,7 +392,6 @@ template <typename EntityId> class EntityComponentManager
 #ifdef ecs_allow_debug
         debugCheckForConflictingTags<T>();
 #endif
-
         auto comps = cSet.get(eId);
         if (!comps)
         {

@@ -22,11 +22,42 @@ inline std::function<EntityId(ECM &ecm, float, float, float, float)> getEntityCo
         return hive;
     case '@':
         return redBlock;
+    case '!':
+        return startBlock;
     case '#':
         return greenBlock;
+    case '%':
+        return titleBlockSm;
+    case '&':
+        return titleBlock;
     }
 
     return NULL;
+};
+
+const std::vector<std::string_view> titlePage{
+    "                               ",
+    "                               ",
+    "   &&&  &     &&   &&& &  &    ", 
+    "   &  & &    &  & &    & &     ",
+    "   &&&  &    &  & &    &&      ", 
+    "   &  & &    &  & &    & &     ",
+    "   &&&  &&&&  &&   &&& &  &    ",
+    "                               ",
+    "  & &  %&   % & && &&%&&  &&&  ", 
+    "  & && %&   %& %& %&& & % &&   ",
+    "  & & &% & & &&%& %&  &&    &  ", 
+    "  & &  %  &  & %&& &&%& % &&&  ",
+    "                               ", 
+    "                               ", 
+    "                               ",
+    "               !               ", 
+    "                               ",
+    "                               ",
+    "                               ", 
+    "                               ",
+    "                               ",
+    "               P               ",
 };
 
 const std::vector<std::string_view> stage1{
@@ -50,7 +81,7 @@ const std::vector<std::string_view> stage1{
     "  ####    ####   ####   ####  ", 
     "  #  #    #  #   #  #   #  #  ",
     "                              ",
-    "               P              ", 
+    "                              ", 
     "                              ",
 };
 
@@ -308,6 +339,8 @@ inline std::vector<std::string_view> getStage(int stage)
         return stage4;
     case 5:
         return stage5;
+    case 999:
+        return titlePage;
     default:
         return gameOver;
    }

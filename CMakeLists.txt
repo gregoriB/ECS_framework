@@ -13,6 +13,8 @@ set(CMAKE_CXX_COMPILER clang++)
 # Add source files
 set(SOURCES main.cpp)
 
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+
 # Set compiler flags
 set(ECS_FLAGS_STANDARD "-Wall" "-Wextra" "-Wno-sign-compare" "-Wno-trigraphs"  "-Wno-unused-parameter" "-Wno-static-inline-explicit-instantiation")
 set(ECS_FLAGS_UNSAFE_METHODS "-Decs_allow_unsafe")
@@ -33,7 +35,7 @@ set(ECS_FLAGS_BENCHMARK ${ECS_FLAGS_TEST} "-Decs_bench_test")
 
 set(ECS_FLAGS)
 
-# Uncomment one of the following to set the desired build type
+# Uncomment any of the following to set the desired option
 # list(APPEND ECS_FLAGS ${ECS_FLAGS_SAVE_TEMPS})
 list(APPEND ECS_FLAGS ${ECS_FLAGS_STANDARD})
 # list(APPEND ECS_FLAGS ${ECS_FLAGS_UNSAFE_METHODS})

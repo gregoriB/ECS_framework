@@ -22,6 +22,12 @@ inline auto update(ECM &ecm)
             return;
         }
 
+        auto [startTriggerId, _] = ecm.get<StartGameTriggerComponent>();
+        if (eId == startTriggerId)
+        {
+            ecm.add<GameEvent>(eId, GameEvents::NEXT_STAGE);
+        }
+
         deathEvents.inspect([&](const DeathEvent &deathEvent) {
             auto &pointsComps = ecm.get<PointsComponent>(eId);
             if (!pointsComps)

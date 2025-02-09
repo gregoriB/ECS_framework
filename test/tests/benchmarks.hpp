@@ -64,6 +64,9 @@ inline void test_benchmark_2M_get_single_entity_single_type(ECM &ecm)
 
     auto elapsed = timer.getElapsedTime();
 
+    assert(count1 == COUNT_2M);
+    assert(count2 == COUNT_2M);
+
     PRINT("TIME:", elapsed, "seconds");
 }
 
@@ -77,7 +80,7 @@ inline void test_benchmark_2M_get_multiple_entities_single_type(ECM &ecm)
     setupBenchmark(ecm, COUNT_2M);
     Timer timer{1};
 
-    for (int i = 1; i <= COUNT_2M; ++i)
+    for (int i = 1; i <= COUNT_2M + 1; ++i)
     {
         auto [vel1, vel2] = ecm.get<TestVelocityComponent>(i, i + 1);
         auto [pos1, pos2] = ecm.get<TestPositionComponent>(i + 1, 1);
@@ -88,6 +91,9 @@ inline void test_benchmark_2M_get_multiple_entities_single_type(ECM &ecm)
     }
 
     auto elapsed = timer.getElapsedTime();
+
+    assert(count1 == COUNT_2M);
+    assert(count2 == COUNT_2M);
 
     PRINT("TIME:", elapsed, "seconds");
 }
@@ -104,7 +110,7 @@ inline void test_benchmark_2M_gather(ECM &ecm)
 
     for (int i = 1; i <= COUNT_2M; ++i)
     {
-        auto [velComp, posComp] = ecm.gather<TestVelocityComponent, TestPositionComponent>(1);
+        auto [velComp, posComp] = ecm.gather<TestVelocityComponent, TestPositionComponent>(i);
         velComp.inspect([&](auto &_) { count1++; });
         posComp.inspect([&](auto &_) { count2++; });
     }
@@ -153,6 +159,30 @@ inline void test_benchmark_2M_gather_all(ECM &ecm)
     auto [velComps, posComps] = ecm.gatherAll<TestVelocityComponent, TestPositionComponent>();
     velComps.each([&](EId eId, auto &comps) { comps.inspect([&](auto &_) { count1++; }); });
     posComps.each([&](EId eId, auto &comps) { comps.inspect([&](auto &_) { count2++; }); });
+
+    auto elapsed = timer.getElapsedTime();
+
+    assert(count1 == COUNT_2M);
+    assert(count2 == COUNT_2M);
+
+    PRINT("TIME:", elapsed, "seconds");
+}
+
+inline void test_benchmark_2M_gather_group(ECM &ecm)
+{
+    PRINT("BENCHMARKING GATHER GROUP 2M ENTITIES W/ 2 COMPONENTS...")
+
+    uint32_t count1{};
+    uint32_t count2{};
+
+    setupBenchmark(ecm, COUNT_2M);
+    Timer timer{1};
+
+    auto group = ecm.gatherGroup<TestVelocityComponent, TestPositionComponent>();
+    group.each([&](EId eId, auto &velComps, auto &posComps) {
+        velComps.inspect([&](auto &_) { count1++; });
+        posComps.inspect([&](auto &_) { count2++; });
+    });
 
     auto elapsed = timer.getElapsedTime();
 

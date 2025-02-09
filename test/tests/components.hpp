@@ -32,6 +32,40 @@ inline void test_gather_component(ECM &ecm)
     assert(stackedComps.size() == 2);
 }
 
+inline void test_gather_group(ECM &ecm)
+{
+    PRINT("TESTING MANAGER GATHER GROUP METHOD")
+
+    EntityId id1 = 1;
+    EntityId id2 = 2;
+
+    // Test group with 1 component and 2 entities
+    ecm.add<TestNonStackedComp>(id1);
+    ecm.add<TestNonStackedComp>(id2);
+    auto group1 = ecm.gatherGroup<TestNonStackedComp>();
+
+    assert(group1.size() == 2);
+    assert(group1.getIds().size() == 2);
+
+    std::vector<EntityId> fromEach1;
+    group1.each([&](EId eId, auto &testStackComps) { fromEach1.push_back(eId); });
+
+    assert(fromEach1.size() == 2);
+
+    // Test group with 2 components and 1 entity
+    ecm.add<TestStackedComp>(id2);
+    auto group2 = ecm.gatherGroup<TestNonStackedComp, TestStackedComp>();
+
+    assert(group2.size() == 1);
+    assert(group2.getIds().size() == 1);
+
+    std::vector<EntityId> fromEach2;
+    group2.each([&](EId eId, auto &testNonStackComps, auto &testStackComps) { fromEach2.push_back(eId); });
+
+    assert(fromEach2.size() == 1);
+    assert(fromEach2[0] == id2);
+}
+
 inline void test_component_mutate_fn(ECM &ecm)
 {
     PRINT("TESTING COMPONENT MUTATE METHOD")

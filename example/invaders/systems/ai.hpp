@@ -15,7 +15,6 @@ inline void cleanup(ECM &ecm)
 
 inline void updateOutsideHiveAliens(ECM &ecm, EId hiveId, const HiveComponent &hiveComp)
 {
-    auto [x, y, w, h] = hiveComp.bounds.box();
     auto &ids = ecm.getEntityIds<HiveAIComponent>();
     if (ids.empty())
     {
@@ -23,6 +22,7 @@ inline void updateOutsideHiveAliens(ECM &ecm, EId hiveId, const HiveComponent &h
         return;
     }
 
+    auto [x, y, w, h] = hiveComp.bounds.box();
     for (const auto &eId : ids)
     {
         auto [aiX, aiY, aiW, aiH] = ecm.get<PositionComponent>(eId).peek(&PositionComponent::bounds).box();
@@ -42,19 +42,20 @@ inline void updateHiveBounds(ECM &ecm, EId hiveId)
         Vector2 topLeft{MAX_FLOAT, MAX_FLOAT};
         Vector2 bottomRight{MIN_FLOAT, MIN_FLOAT};
 
-        ecm.getAll<HiveAIComponent>().each([&](EId eId, auto &_) {
-            ecm.get<PositionComponent>(eId).inspect([&](const PositionComponent &posComp) {
-                auto [x, y, w, h] = posComp.bounds.box();
-                if (x < topLeft.x)
-                    topLeft.x = x;
-                if (y < topLeft.y)
-                    topLeft.y = y;
-                if (w > bottomRight.x)
-                    bottomRight.x = w;
-                if (h > bottomRight.y)
-                    bottomRight.y = h;
+        ecm.gatherGroup<HiveAIComponent, PositionComponent>().each(
+            [&](EId eId, auto &_, auto &positionComps) {
+                positionComps.inspect([&](const PositionComponent &posComp) {
+                    auto [x, y, w, h] = posComp.bounds.box();
+                    if (x < topLeft.x)
+                        topLeft.x = x;
+                    if (y < topLeft.y)
+                        topLeft.y = y;
+                    if (w > bottomRight.x)
+                        bottomRight.x = w;
+                    if (h > bottomRight.y)
+                        bottomRight.y = h;
+                });
             });
-        });
 
         hiveComp.bounds = Bounds{topLeft, Vector2{bottomRight.x - topLeft.x, bottomRight.y - topLeft.y}};
         updateOutsideHiveAliens(ecm, hiveId, hiveComp);
@@ -81,16 +82,23 @@ inline void handleHiveShift(ECM &ecm, auto &hiveMovementEffects)
     });
 }
 
-template <typename Movement> inline Vector2 calculateSpeed(const Vector2 &speed, const Movement &movement)
+template <typename Movement>
+inline Vector2 calculateSpeed(ECM &ecm, const Vector2 &speed, const Movement &movement)
 {
+    auto [_, gameComps] = ecm.get<GameComponent>();
+    float modifier = gameComps.peek(&GameComponent::currentStage) / 2.0f;
+    if (modifier < 1)
+        modifier = 1;
+
     Vector2 calculatedSpeed{0, 0};
+
     switch (movement)
     {
     case Movement::LEFT:
-        calculatedSpeed.x = -1 * speed.x;
+        calculatedSpeed.x = -1 * speed.x * modifier;
         break;
     case Movement::RIGHT:
-        calculatedSpeed.x = speed.x;
+        calculatedSpeed.x = speed.x * modifier;
         break;
     case Movement::DOWN:
         calculatedSpeed.y = speed.y;
@@ -117,7 +125,7 @@ template <typename Movement> inline bool checkIsOutOfBounds(ECM &ecm, EId hiveId
 
     auto &posComps = ecm.get<PositionComponent>(hiveAiIds[0]);
     return !!posComps.find([&](const PositionComponent &positionComp) {
-        auto [x, y] = calculateSpeed(hiveSpeeds, movement);
+        auto [x, y] = calculateSpeed(ecm, hiveSpeeds, movement);
         Bounds newBounds{
             positionComp.bounds.position.x + x,
             positionComp.bounds.position.y + y,
@@ -162,7 +170,7 @@ inline void moveHiveAI(ECM &ecm, EId hiveId, auto &hiveMovementEffects)
     if (!allHiveAiIds.size())
         return;
 
-    auto newSpeed = calculateSpeed(speeds, movement);
+    auto newSpeed = calculateSpeed(ecm, speeds, movement);
     if (!newSpeed.x && !newSpeed.y)
         return;
 
@@ -223,6 +231,9 @@ inline bool containsId(const auto &vec, EntityId id)
 inline void handleHiveAttack(ECM &ecm)
 {
     auto [hiveId, hiveComps] = ecm.get<HiveComponent>();
+    if (!hiveId)
+        return;
+
     auto &aiTimeoutEffects = ecm.get<AITimeoutEffect>(hiveId);
     if (aiTimeoutEffects)
     {
@@ -240,6 +251,9 @@ inline void handleHiveAttack(ECM &ecm)
         return;
 
     auto hiveAiIds = ecm.getEntityIds<HiveAIComponent>();
+    if (hiveAiIds.empty())
+        return;
+
     for (auto iter = hiveAiIds.begin(); iter != hiveAiIds.end();)
     {
         auto id = hiveAiIds[*iter];

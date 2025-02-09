@@ -14,13 +14,17 @@ namespace Utilties
 {
 inline void registerTransformations(ECM &ecm)
 {
-    return;
-    ecm.registerTransformation<PositionComponent>([&](auto eId, PositionComponent comp) {
-        if (ecm.get<ProjectileComponent>(eId))
-        {
-            comp.bounds.size.x += 100;
-        }
+    ecm.registerTransformation<MovementComponent>([&](auto eId, MovementComponent comp) {
+        auto &projectile = ecm.get<ProjectileComponent>(eId);
+        if (!projectile)
+            return comp;
 
+        auto [playerId, _] = ecm.get<PlayerComponent>();
+        auto &shooterId = projectile.peek(&ProjectileComponent::shooterId);
+        if (shooterId != playerId || !ecm.get<PowerupEffect>(playerId))
+            return comp;
+
+        comp.speeds.y += 1000;
         return comp;
     });
 }
@@ -64,7 +68,8 @@ inline void stageBuilder(ECM &ecm, const std::vector<std::string_view> &stage)
 
 inline void setup(ECM &ecm, ScreenConfig &screen)
 {
-    auto stage = Stages::getStage(1);
+    PRINT("STARTING GAME")
+    auto stage = Stages::getStage(999);
     int tileSize = screen.width / stage[0].size();
     Vector2 size{static_cast<float>(screen.width), static_cast<float>(screen.height)};
 
@@ -77,7 +82,9 @@ inline void setup(ECM &ecm, ScreenConfig &screen)
 
 inline void nextStage(ECM &ecm, int stage)
 {
+    PRINT("STAGE:", stage, "LOADED")
     ecm.clear<HiveMovementEffect>();
+    ecm.clearEntities<HiveAIComponent>();
     stageBuilder(ecm, Stages::getStage(stage));
 };
 

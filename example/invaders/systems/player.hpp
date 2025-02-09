@@ -29,12 +29,6 @@ inline auto update(ECM &ecm)
 
                 break;
             }
-            case Event::NEXT_STAGE: {
-                ecm.get<LivesComponent>(playerId).mutate(
-                    [&](LivesComponent &livesComp) { ++livesComp.count; });
-
-                break;
-            }
             default:
                 break;
             }

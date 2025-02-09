@@ -14,6 +14,7 @@ inline void movePlayer(ECM &ecm)
 {
     float dt = Utilties::getDeltaTime(ecm);
     ecm.getAll<PlayerInputEvent>().each([&](EId eId, auto &playerInputEvents) {
+        bool isDeactivated = !!ecm.get<DeactivatedComponent>(eId);
         auto &speeds = ecm.get<MovementComponent>(eId).peek(&MovementComponent::speeds);
         float baseSpeed = speeds.x * dt;
         playerInputEvents.inspect([&](const PlayerInputEvent &inputEvent) {
@@ -21,6 +22,9 @@ inline void movePlayer(ECM &ecm)
             switch (inputEvent.action)
             {
             case Actions::SHOOT:
+                if (isDeactivated)
+                    return;
+
                 ecm.add<AttackEvent>(eId, 3);
                 break;
             case Actions::QUIT: {
@@ -31,6 +35,9 @@ inline void movePlayer(ECM &ecm)
             default:
                 break;
             }
+
+            if (isDeactivated)
+                return;
 
             using Movements = decltype(PlayerInputEvent::movement);
             switch (inputEvent.movement)

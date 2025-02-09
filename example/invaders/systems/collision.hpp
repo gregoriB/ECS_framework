@@ -40,6 +40,12 @@ inline void handleCollisions(ECM &ecm)
                 if (!isX || !isY)
                     return;
 
+                if (ecm.get<PowerupComponent>(eId2))
+                {
+                    ecm.add<PowerupEvent>(eId1);
+                    ecm.add<DamageEvent>(eId2, eId1);
+                }
+
                 EId dealer1 = projectile1 ? projectile1.peek(&ProjectileComponent::shooterId) : eId1;
                 EId dealer2 = projectile2 ? projectile2.peek(&ProjectileComponent::shooterId) : eId2;
                 ecm.add<DamageEvent>(eId1, dealer2);

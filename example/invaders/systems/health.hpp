@@ -12,16 +12,14 @@ inline void cleanup(ECM &ecm)
 
 inline auto update(ECM &ecm)
 {
-    ecm.getAll<HealthEvent>().each([&](EId eId, auto &healthEvents) {
-        auto [healthComps, obstacleComps] = ecm.gather<HealthComponent, ObstacleComponent>(eId);
+    ecm.gatherGroup<HealthEvent, HealthComponent>().each([&](EId eId, auto &healthEvents, auto &healthComps) {
         healthEvents.inspect([&](const HealthEvent &healthEvent) {
             healthComps.mutate([&](HealthComponent &healthComp) {
                 healthComp.current += healthEvent.amount;
                 if (healthComp.current <= 0)
                     ecm.add<DeathEvent>(eId, healthEvent.dealerId);
 
-                auto &obstacleComps = ecm.get<ObstacleComponent>(eId);
-                if (!obstacleComps)
+                if (!ecm.get<ObstacleComponent>(eId))
                     return;
 
                 ecm.get<SpriteComponent>(eId).mutate([&](SpriteComponent &spriteComp) {

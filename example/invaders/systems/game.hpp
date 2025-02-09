@@ -23,14 +23,28 @@ inline auto update(ECM &ecm)
                     gameComps.mutate([&](GameComponent &gameComp) { gameComp.isGameOver = true; });
                     break;
                 }
-                case GameEvents::GAME_OVER:
+                case GameEvents::GAME_OVER: {
                     PRINT("GAME OVER")
-                    gameComps.mutate([&](GameComponent &gameComp) { gameComp.isGameOver = true; });
+                    Utilties::nextStage(ecm, -1);
+                    auto [playerId, _] = ecm.get<PlayerComponent>();
+                    ecm.add<DeactivatedComponent>(playerId);
                     break;
-                case GameEvents::NEXT_STAGE:
-                    PRINT("STAGE CLEARED!!")
-                    Utilties::nextStage(ecm, ++gameComp.currentStage);
+                }
+                case GameEvents::NEXT_STAGE: {
+                    auto [startTriggerId, _] = ecm.get<StartGameTriggerComponent>();
+                    if (eId == startTriggerId)
+                    {
+                        gameComp.currentStage = 1;
+                        Utilties::nextStage(ecm, 1);
+                        ecm.clearEntities<TitleScreenComponent>();
+                    }
+                    else
+                    {
+                        PRINT("STAGE CLEARED!!")
+                        Utilties::nextStage(ecm, ++gameComp.currentStage);
+                    }
                     break;
+                }
                 default:
                     break;
                 }

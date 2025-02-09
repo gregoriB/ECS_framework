@@ -29,6 +29,7 @@ inline std::vector<testFn> componentManagerTests{
     
     test_get_component,
     test_gather_component,
+    test_gather_group,
     
     test_add_non_stack_component,
     test_add_more_non_stack_components_fail,
@@ -68,6 +69,7 @@ inline std::vector<testFn> benchmarkTests{
     test_benchmark_2M_get_all,
     test_benchmark_2M_gather,
     test_benchmark_2M_gather_all,
+    test_benchmark_2M_gather_group,
     test_benchmark_2M_access,
     test_benchmark_2M_update,
     test_benchmark_2M_destroy,

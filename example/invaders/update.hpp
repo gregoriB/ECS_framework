@@ -10,6 +10,7 @@
 #include "systems/game.hpp"
 #include "systems/health.hpp"
 #include "systems/input.hpp"
+#include "systems/item.hpp"
 #include "systems/movement.hpp"
 #include "systems/player.hpp"
 #include "systems/position.hpp"
@@ -33,7 +34,7 @@ template <typename CleanupFuncs> inline void cleanup(ECM &ecm, CleanupFuncs &cle
 inline bool run(ECM &ecm)
 {
     // clang-format off
-    std::array<CleanupFunc, 13> cleanupFuncs{
+    std::array<CleanupFunc, 14> cleanupFuncs{
         Systems::AI::update(ecm),
         Systems::Input::update(ecm),
         Systems::Attack::update(ecm),
@@ -45,6 +46,7 @@ inline bool run(ECM &ecm)
         Systems::Death::update(ecm),
         Systems::Score::update(ecm),
         Systems::Player::update(ecm),
+        Systems::Item::update(ecm),
         Systems::UI::update(ecm),
         Systems::Game::update(ecm),
     };

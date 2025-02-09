@@ -28,10 +28,6 @@ enum class Actions
     QUIT,
 };
 
-struct PlayerComponent : Unique
-{
-};
-
 enum class PlayerEvents
 {
     NONE = 0,
@@ -46,6 +42,10 @@ struct PlayerEvent : Event
     PlayerEvent(PlayerEvents _event) : event(_event)
     {
     }
+};
+
+struct PlayerComponent : Unique
+{
 };
 
 struct ScoreComponent
@@ -165,7 +165,7 @@ struct MovementEffect : Effect
     }
 };
 
-struct MovementComponent
+struct MovementComponent : Transform
 {
     Vector2 speeds;
 
@@ -193,7 +193,7 @@ struct CollidableComponent
 {
 };
 
-struct PositionComponent : Transform
+struct PositionComponent
 {
     Bounds bounds;
 
@@ -262,6 +262,10 @@ struct DeathComponent
 {
 };
 
+struct DeactivatedComponent
+{
+};
+
 struct DamageComponent
 {
     float amount;
@@ -310,6 +314,14 @@ struct UFOTimeoutEffect : Effect, Stack
     UFOTimeoutEffect(float _duration) : Effect(_duration)
     {
     }
+};
+
+struct StartGameTriggerComponent : Required, Unique
+{
+};
+
+struct TitleScreenComponent
+{
 };
 
 struct GameComponent : Required, Unique
@@ -413,6 +425,28 @@ struct PointsComponent
     {
     }
     PointsComponent(int _points, int _multiplier) : points(_points), multiplier(_multiplier)
+    {
+    }
+};
+
+struct PowerupEvent : Event
+{
+};
+
+struct PowerupComponent
+{
+};
+
+struct PowerupEffect : Effect
+{
+    PowerupEffect() : Effect(10)
+    {
+    }
+};
+
+struct PowerupTimeoutEffect : Effect
+{
+    PowerupTimeoutEffect() : Effect(30)
     {
     }
 };

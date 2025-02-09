@@ -76,12 +76,12 @@ struct TestEventComp : public Tags::Event
 
 struct TestVelocityComponent
 {
-    float x{1.0F};
-    float y{1.0F};
+    float x{1.0f};
+    float y{1.0f};
 };
 
 struct TestPositionComponent
 {
-    float x{0.0F};
-    float y{0.0F};
+    float x{0.0f};
+    float y{0.0f};
 };

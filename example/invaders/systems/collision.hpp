@@ -23,14 +23,14 @@ inline void handleCollisions(ECM &ecm)
 {
     auto [collisionCheckEventSet] = ecm.getAll<CollisionCheckEvent>();
     collisionCheckEventSet.each([&](EId eId1, auto &checkEvents) {
-        auto [projectile1, hiveAiComps1] = ecm.gather<ProjectileComponent, HiveAIComponent>(eId1);
+        auto [projectile1, hiveAiComps1] = ecm.get<ProjectileComponent, HiveAIComponent>(eId1);
         auto [cX, cY, cW, cH] = checkEvents.peek(&CollisionCheckEvent::bounds).box();
-        ecm.gatherGroup<CollidableComponent, PositionComponent>().each(
+        ecm.getGroup<CollidableComponent, PositionComponent>().each(
             [&](EId eId2, auto &collidableComps2, auto &positionComps2) {
                 if (eId1 == eId2)
                     return;
 
-                auto [projectile2, hiveAiComps2] = ecm.gather<ProjectileComponent, HiveAIComponent>(eId2);
+                auto [projectile2, hiveAiComps2] = ecm.get<ProjectileComponent, HiveAIComponent>(eId2);
                 if (checkFriendlyFire(ecm, projectile2, hiveAiComps1) ||
                     checkFriendlyFire(ecm, projectile1, hiveAiComps2))
                     return;

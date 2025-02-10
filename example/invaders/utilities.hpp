@@ -175,7 +175,7 @@ inline std::vector<Renderer::RenderableElement> getRenderableElements(ECM &ecm)
     std::vector<Renderer::RenderableElement> worldElements{};
     std::vector<Renderer::RenderableElement> uiElements{};
 
-    ecm.gatherGroup<SpriteComponent, PositionComponent>().each(
+    ecm.getGroup<SpriteComponent, PositionComponent>().each(
         [&](EId eId, auto &spriteComps, auto &positionComps) {
             auto &rgba = spriteComps.peek(&SpriteComponent::rgba);
             auto [x, y, w, h] = positionComps.peek(&PositionComponent::bounds).get();

@@ -26,7 +26,7 @@ inline void test_gather_component(ECM &ecm)
     ecm.add<TestStackedComp>(id);
     ecm.add<TestStackedComp>(id);
 
-    auto [nonStackedComps, stackedComps] = ecm.gather<TestNonStackedComp, TestStackedComp>(id);
+    auto [nonStackedComps, stackedComps] = ecm.get<TestNonStackedComp, TestStackedComp>(id);
 
     assert(nonStackedComps.size() == 1);
     assert(stackedComps.size() == 2);
@@ -42,7 +42,7 @@ inline void test_gather_group(ECM &ecm)
     // Test group with 1 component and 2 entities
     ecm.add<TestNonStackedComp>(id1);
     ecm.add<TestNonStackedComp>(id2);
-    auto group1 = ecm.gatherGroup<TestNonStackedComp>();
+    auto group1 = ecm.getGroup<TestNonStackedComp>();
 
     assert(group1.size() == 2);
     assert(group1.getIds().size() == 2);
@@ -54,7 +54,7 @@ inline void test_gather_group(ECM &ecm)
 
     // Test group with 2 components and 1 entity
     ecm.add<TestStackedComp>(id2);
-    auto group2 = ecm.gatherGroup<TestNonStackedComp, TestStackedComp>();
+    auto group2 = ecm.getGroup<TestNonStackedComp, TestStackedComp>();
 
     assert(group2.size() == 1);
     assert(group2.getIds().size() == 1);

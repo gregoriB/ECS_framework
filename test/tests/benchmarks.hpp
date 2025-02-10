@@ -111,7 +111,7 @@ inline void test_benchmark_2M_gather(ECM &ecm)
 
     for (int i = 1; i <= COUNT_2M; ++i)
     {
-        auto [velComp, posComp] = ecm.gather<TestVelocityComponent, TestPositionComponent>(i);
+        auto [velComp, posComp] = ecm.get<TestVelocityComponent, TestPositionComponent>(i);
         velComp.inspect([&](auto &_) { count1++; });
         posComp.inspect([&](auto &_) { count2++; });
     }
@@ -179,7 +179,7 @@ inline void test_benchmark_2M_gather_group(ECM &ecm)
     setupBenchmark(ecm, COUNT_2M);
     Timer timer{1};
 
-    auto group = ecm.gatherGroup<TestVelocityComponent, TestPositionComponent>();
+    auto group = ecm.getGroup<TestVelocityComponent, TestPositionComponent>();
     group.each([&](EId eId, auto &velComps, auto &posComps) {
         velComps.inspect([&](auto &_) { count1++; });
         posComps.inspect([&](auto &_) { count2++; });

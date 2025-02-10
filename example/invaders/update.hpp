@@ -28,7 +28,7 @@ template <typename CleanupFuncs> inline void cleanup(ECM &ecm, CleanupFuncs &cle
     for (auto &func : cleanupFuncs)
         func(ecm);
 
-    ecm.clearByTag<Tags::Event>();
+    ecm.clear<Tags::Event>();
 }
 
 inline bool run(ECM &ecm)

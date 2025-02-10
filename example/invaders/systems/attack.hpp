@@ -36,7 +36,7 @@ inline void processAttacks(ECM &ecm)
             if (attackEffects)
                 return;
 
-            auto [positionComps, attackComps] = ecm.gather<PositionComponent, AttackComponent>(eId);
+            auto [positionComps, attackComps] = ecm.get<PositionComponent, AttackComponent>(eId);
             auto &bounds = positionComps.peek(&PositionComponent::bounds);
             auto direction = attackComps.peek(&AttackComponent::direction);
 

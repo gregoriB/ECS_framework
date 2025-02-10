@@ -165,12 +165,6 @@ template <typename EntityId> class EntityComponentManager
         return getComponentsHelper<T>(getComponentSet<T>(), id, ids...);
     }
 
-    // CHANGE: Consolidate with get
-    template <typename... T> [[nodiscard]] std::tuple<Components<T> &...> gather(EntityId eId)
-    {
-        return {getComponents<T>(eId)...};
-    }
-
     template <typename T, typename... Ts> [[nodiscard]] const std::vector<EntityId> getEntityIds()
     {
         if constexpr (sizeof...(Ts) == 0)
@@ -191,7 +185,8 @@ template <typename EntityId> class EntityComponentManager
     }
 
     // CHANGE: getCommonGroup?
-    template <typename... Ts> ComponentSetGroup<Ts...> gatherGroup()
+    template <typename... Ts> ComponentSetGroup<Ts...> getGroup()
+    // CHANGE: Consolidate with get
     {
         bool shouldBreak{};
         std::tuple<ComponentSet<Ts> *...> sets{};
@@ -239,11 +234,6 @@ template <typename EntityId> class EntityComponentManager
         (debugCheckRequired<Ts>("Clear"), ...);
 #endif
         clearComponents<Ts...>();
-    }
-
-    template <typename Tag> void clearByTag()
-    {
-        clearComponentsByTag<Tag>();
     }
 
     // Remove a multiple ids from each set
@@ -488,7 +478,15 @@ template <typename EntityId> class EntityComponentManager
 
     template <typename... Ts> void clearComponents()
     {
-        (getStoredComponents().erase(getComponentHash<Ts>()), ...);
+        (
+            [&]() {
+                // TODO Task : Update to support more tags
+                if constexpr (std::is_same_v<Ts, Tags::Event>)
+                    clearComponentsByTag<Ts>();
+                else
+                    getStoredComponents().erase(getComponentHash<Ts>());
+            }(),
+            ...);
     }
 
     template <typename Tag> void clearComponentsByTag()

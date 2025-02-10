@@ -44,20 +44,19 @@ inline void updateHiveBounds(ECM &ecm, EId hiveId)
         Vector2 topLeft{MAX_FLOAT, MAX_FLOAT};
         Vector2 bottomRight{MIN_FLOAT, MIN_FLOAT};
 
-        ecm.gatherGroup<HiveAIComponent, PositionComponent>().each(
-            [&](EId eId, auto &_, auto &positionComps) {
-                positionComps.inspect([&](const PositionComponent &posComp) {
-                    auto [x, y, w, h] = posComp.bounds.box();
-                    if (x < topLeft.x)
-                        topLeft.x = x;
-                    if (y < topLeft.y)
-                        topLeft.y = y;
-                    if (w > bottomRight.x)
-                        bottomRight.x = w;
-                    if (h > bottomRight.y)
-                        bottomRight.y = h;
-                });
+        ecm.getGroup<HiveAIComponent, PositionComponent>().each([&](EId eId, auto &_, auto &positionComps) {
+            positionComps.inspect([&](const PositionComponent &posComp) {
+                auto [x, y, w, h] = posComp.bounds.box();
+                if (x < topLeft.x)
+                    topLeft.x = x;
+                if (y < topLeft.y)
+                    topLeft.y = y;
+                if (w > bottomRight.x)
+                    bottomRight.x = w;
+                if (h > bottomRight.y)
+                    bottomRight.y = h;
             });
+        });
 
         hiveComp.bounds = Bounds{topLeft, Vector2{bottomRight.x - topLeft.x, bottomRight.y - topLeft.y}};
         updateOutsideHiveAliens(ecm, hiveId, hiveComp);

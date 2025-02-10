@@ -12,7 +12,7 @@ inline void cleanup(ECM &ecm)
 
 inline auto update(ECM &ecm)
 {
-    ecm.gatherGroup<HealthEvent, HealthComponent>().each([&](EId eId, auto &healthEvents, auto &healthComps) {
+    ecm.getGroup<HealthEvent, HealthComponent>().each([&](EId eId, auto &healthEvents, auto &healthComps) {
         healthEvents.inspect([&](const HealthEvent &healthEvent) {
             healthComps.mutate([&](HealthComponent &healthComp) {
                 healthComp.current += healthEvent.amount;

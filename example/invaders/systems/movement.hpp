@@ -35,7 +35,7 @@ inline Bounds calculateNewBounds(auto &movementEvents, const PositionComponent &
 inline void applyMovementEffects(ECM &ecm)
 {
     auto dt = Utilties::getDeltaTime(ecm);
-    ecm.gatherGroup<MovementEffect, MovementComponent, PositionComponent>().each(
+    ecm.getGroup<MovementEffect, MovementComponent, PositionComponent>().each(
         [&](EId eId, auto &movementEffects, auto &movementComps, auto &positionComps) {
             movementEffects.inspect([&](const MovementEffect &movementEffect) {
                 auto &speeds = movementComps.peek(&MovementComponent::speeds);

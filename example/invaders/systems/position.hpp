@@ -11,9 +11,11 @@ inline void cleanup(ECM &ecm)
 
 inline auto update(ECM &ecm)
 {
-    ecm.getAll<PositionEvent>().each([&](EId eId, auto &positionEvents) {
+    auto [positionEventSet] = ecm.getAll<PositionEvent>();
+    positionEventSet.each([&](EId eId, auto &positionEvents) {
         positionEvents.first().inspect([&](const PositionEvent &positionEvent) {
-            ecm.get<PositionComponent>(eId).mutate([&](PositionComponent &positionComp) {
+            auto [positionComps] = ecm.get<PositionComponent>(eId);
+            positionComps.mutate([&](PositionComponent &positionComp) {
                 positionComp.bounds.position.x = positionEvent.coords.x;
                 positionComp.bounds.position.y = positionEvent.coords.y;
             });

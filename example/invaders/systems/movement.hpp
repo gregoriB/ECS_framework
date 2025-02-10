@@ -59,9 +59,11 @@ inline void applyMovementEffects(ECM &ecm)
 
 inline void updateOtherMovement(ECM &ecm)
 {
-    ecm.getAll<MovementEvent>().each([&](EId eId, auto &movementEvents) {
-        ecm.get<PositionComponent>(eId).inspect([&](const PositionComponent &positionComp) {
-            auto [gameId, gameComps] = ecm.get<GameComponent>();
+    auto [movementEventSet] = ecm.getAll<MovementEvent>();
+    movementEventSet.each([&](EId eId, auto &movementEvents) {
+        auto [positionComps] = ecm.get<PositionComponent>(eId);
+        positionComps.inspect([&](const PositionComponent &positionComp) {
+            auto [gameId, gameComps] = ecm.getUnique<GameComponent>();
             auto &gameBounds = gameComps.peek(&GameComponent::bounds);
             auto [gX, gY, gW, gH] = gameBounds.box();
 
@@ -72,7 +74,8 @@ inline void updateOtherMovement(ECM &ecm)
             // TODO Task : Move boundary checks to collision system
             if (checkOutOfBounds(gameBounds, newBounds))
             {
-                if (!ecm.get<ProjectileComponent>(eId) && !ecm.get<UFOAIComponent>(eId))
+                auto [projectileComps, ufoAiComps] = ecm.get<ProjectileComponent, UFOAIComponent>(eId);
+                if (!projectileComps && !ufoAiComps)
                     return;
 
                 if (newH < gY || newY > gH || newW < gX || newX > gW)

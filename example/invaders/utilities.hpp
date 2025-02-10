@@ -12,16 +12,21 @@
 
 namespace Utilties
 {
+inline auto &first(auto value)
+{
+    return std::get<0>(value);
+}
+
 inline void registerTransformations(ECM &ecm)
 {
     ecm.registerTransformation<MovementComponent>([&](auto eId, MovementComponent comp) {
-        auto &projectile = ecm.get<ProjectileComponent>(eId);
+        auto &projectile = first(ecm.get<ProjectileComponent>(eId));
         if (!projectile)
             return comp;
 
-        auto [playerId, _] = ecm.get<PlayerComponent>();
+        auto [playerId, _] = ecm.getUnique<PlayerComponent>();
         auto &shooterId = projectile.peek(&ProjectileComponent::shooterId);
-        if (shooterId != playerId || !ecm.get<PowerupEffect>(playerId))
+        if (shooterId != playerId || !first(ecm.get<PowerupEffect>(playerId)))
             return comp;
 
         comp.speeds.y += 1000;
@@ -61,7 +66,7 @@ inline void uiBuilder(ECM &ecm, const std::vector<std::string_view> &ui, int til
 
 inline void stageBuilder(ECM &ecm, const std::vector<std::string_view> &stage)
 {
-    auto [_, gameMetaComps] = ecm.get<GameMetaComponent>();
+    auto [_, gameMetaComps] = ecm.getUnique<GameMetaComponent>();
     auto &size = gameMetaComps.peek(&GameMetaComponent::screen);
     return stageBuilder(ecm, stage, size.x / stage[0].size());
 }
@@ -90,19 +95,19 @@ inline void nextStage(ECM &ecm, int stage)
 
 inline void updateDeltaTime(ECM &ecm, float delta)
 {
-    auto [gameId, gameMetaComps] = ecm.get<GameMetaComponent>();
+    auto [gameId, gameMetaComps] = ecm.getUnique<GameMetaComponent>();
     gameMetaComps.mutate([&](GameMetaComponent &gameMetaComp) { gameMetaComp.deltaTime = delta; });
 };
 
 inline float getDeltaTime(ECM &ecm)
 {
-    auto [gameId, gameMetaComps] = ecm.get<GameMetaComponent>();
+    auto [gameId, gameMetaComps] = ecm.getUnique<GameMetaComponent>();
     return gameMetaComps.peek(&GameMetaComponent::deltaTime);
 };
 
 inline void registerPlayerInputs(ECM &ecm, std::vector<Inputs> &inputs)
 {
-    auto [playerId, _] = ecm.get<PlayerComponent>();
+    auto [playerId, _] = ecm.getUnique<PlayerComponent>();
     using Movements = decltype(PlayerInputEvent::movement);
     using Actions = decltype(PlayerInputEvent::action);
     for (const auto &input : inputs)
@@ -161,7 +166,7 @@ inline void registerAIInputs(ECM &ecm, EId eId, std::vector<Inputs> &inputs)
 
 inline bool getGameoverState(ECM &ecm)
 {
-    auto [gameId, gameComps] = ecm.get<GameComponent>();
+    auto [gameId, gameComps] = ecm.getUnique<GameComponent>();
     return gameComps.peek(&GameComponent::isGameOver);
 };
 
@@ -175,11 +180,11 @@ inline std::vector<Renderer::RenderableElement> getRenderableElements(ECM &ecm)
             auto &rgba = spriteComps.peek(&SpriteComponent::rgba);
             auto [x, y, w, h] = positionComps.peek(&PositionComponent::bounds).get();
             Renderer::RenderableElement renderEl{x, y, w, h, rgba};
-            auto &uiComps = ecm.get<UIComponent>(eId);
+            auto &uiComps = first(ecm.get<UIComponent>(eId));
             auto &vec = !!uiComps ? uiElements : worldElements;
             if (uiComps)
             {
-                auto &textComps = ecm.get<TextComponent>(eId);
+                auto &textComps = first(ecm.get<TextComponent>(eId));
                 textComps.inspect([&](const TextComponent &textComp) {
                     renderEl.text = textComp.text;
                     renderEl.rgba = Renderer::RGBA{255, 255, 255, 255};
@@ -207,7 +212,7 @@ inline template <typename... Ts> void cleanupEffect(ECM &ecm)
             }),
              ...);
         },
-        ecm.gatherAll<Ts...>());
+        ecm.getAll<Ts...>());
 }
 
 }; // namespace Utilties

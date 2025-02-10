@@ -246,15 +246,15 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
         m_pointers[id1] = -1;
     }
 
-    template <typename... Ids> void erase (Id id, Ids... ids)
+    template <typename... Ids> void erase(Id id, Ids... ids)
     {
         erase(id);
         (erase(ids), ...);
     }
 
-    void erase (std::vector<Id> ids)
+    void erase(std::vector<Id> ids)
     {
-        for (const auto& id : ids)
+        for (const auto &id : ids)
             erase(id);
     }
 

@@ -11,26 +11,29 @@ inline void cleanup(ECM &ecm)
 
 inline auto update(ECM &ecm)
 {
-    ecm.getAll<UIEvent>().each([&](EId eId, auto &uiEvents) {
+    auto [uiEventSet] = ecm.getAll<UIEvent>();
+    uiEventSet.each([&](EId eId, auto &uiEvents) {
         uiEvents.inspect([&](const UIEvent &uiEvent) {
-            auto [playerId, playerComps] = ecm.get<PlayerComponent>();
+            auto [playerId, playerComps] = ecm.getUnique<PlayerComponent>();
             using Event = decltype(uiEvent.event);
             switch (uiEvent.event)
             {
             case Event::UPDATE_SCORE: {
-                auto &score = ecm.get<ScoreComponent>(playerId).peek(&ScoreComponent::score);
-                auto [playerScoreId, _] = ecm.get<PlayerScoreCardComponent>();
-                ecm.get<TextComponent>(playerScoreId).mutate([&](TextComponent &textComp) {
-                    textComp.text = "SCORE: " + std::to_string(score);
-                });
+                auto [scoreComps] = ecm.get<ScoreComponent>(playerId);
+                auto &score = scoreComps.peek(&ScoreComponent::score);
+                auto [playerScoreId, _] = ecm.getUnique<PlayerScoreCardComponent>();
+                auto [textComps] = ecm.get<TextComponent>(playerScoreId);
+                textComps.mutate(
+                    [&](TextComponent &textComp) { textComp.text = "SCORE: " + std::to_string(score); });
                 break;
             }
             case Event::UPDATE_LIVES: {
-                auto &lives = ecm.get<LivesComponent>(playerId).peek(&LivesComponent::count);
-                auto [playerLifeCardId, _] = ecm.get<PlayerLifeCardComponent>();
-                ecm.get<TextComponent>(playerLifeCardId).mutate([&](TextComponent &textComp) {
-                    textComp.text = "LIVES: " + std::to_string(lives);
-                });
+                auto [livesComps] = ecm.get<LivesComponent>(playerId);
+                auto &lives = livesComps.peek(&LivesComponent::count);
+                auto [playerLifeCardId, _] = ecm.getUnique<PlayerLifeCardComponent>();
+                auto [textComps] = ecm.get<TextComponent>(playerLifeCardId);
+                textComps.mutate(
+                    [&](TextComponent &textComp) { textComp.text = "LIVES: " + std::to_string(lives); });
                 break;
             }
             }

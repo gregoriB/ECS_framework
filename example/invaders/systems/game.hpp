@@ -12,9 +12,10 @@ inline void cleanup(ECM &ecm)
 
 inline auto update(ECM &ecm)
 {
-    ecm.getAll<GameEvent>().each([&](EId eId, auto &gameEvents) {
+    auto [gameEventSet] = ecm.getAll<GameEvent>();
+    gameEventSet.each([&](EId eId, auto &gameEvents) {
         gameEvents.inspect([&](const GameEvent &gameEvent) {
-            auto [_, gameComps] = ecm.get<GameComponent>();
+            auto [_, gameComps] = ecm.getUnique<GameComponent>();
             gameComps.mutate([&](GameComponent &gameComp) {
                 switch (gameEvent.event)
                 {
@@ -26,12 +27,12 @@ inline auto update(ECM &ecm)
                 case GameEvents::GAME_OVER: {
                     PRINT("GAME OVER")
                     Utilties::nextStage(ecm, -1);
-                    auto [playerId, _] = ecm.get<PlayerComponent>();
+                    auto [playerId, _] = ecm.getUnique<PlayerComponent>();
                     ecm.add<DeactivatedComponent>(playerId);
                     break;
                 }
                 case GameEvents::NEXT_STAGE: {
-                    auto [startTriggerId, _] = ecm.get<StartGameTriggerComponent>();
+                    auto [startTriggerId, _] = ecm.getUnique<StartGameTriggerComponent>();
                     if (eId == startTriggerId)
                     {
                         gameComp.currentStage = 1;

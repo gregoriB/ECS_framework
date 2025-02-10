@@ -13,9 +13,12 @@ inline void cleanup(ECM &ecm)
 inline void movePlayer(ECM &ecm)
 {
     float dt = Utilties::getDeltaTime(ecm);
-    ecm.getAll<PlayerInputEvent>().each([&](EId eId, auto &playerInputEvents) {
-        bool isDeactivated = !!ecm.get<DeactivatedComponent>(eId);
-        auto &speeds = ecm.get<MovementComponent>(eId).peek(&MovementComponent::speeds);
+    auto [playerInputEventSet] = ecm.getAll<PlayerInputEvent>();
+    playerInputEventSet.each([&](EId eId, auto &playerInputEvents) {
+        auto [deactivatedComps] = ecm.get<DeactivatedComponent>(eId);
+        bool isDeactivated = !!deactivatedComps;
+        auto [movementComps] = ecm.get<MovementComponent>(eId);
+        auto &speeds = movementComps.peek(&MovementComponent::speeds);
         float baseSpeed = speeds.x * dt;
         playerInputEvents.inspect([&](const PlayerInputEvent &inputEvent) {
             using Actions = decltype(PlayerInputEvent::action);
@@ -28,7 +31,7 @@ inline void movePlayer(ECM &ecm)
                 ecm.add<AttackEvent>(eId, 3);
                 break;
             case Actions::QUIT: {
-                auto [gameId, _] = ecm.get<GameComponent>();
+                auto [gameId, _] = ecm.getUnique<GameComponent>();
                 ecm.add<GameEvent>(gameId, GameEvents::QUIT);
                 break;
             }

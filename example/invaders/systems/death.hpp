@@ -14,22 +14,23 @@ inline void cleanup(ECM &ecm)
 
 inline auto update(ECM &ecm)
 {
-    ecm.getAll<DeathEvent>().each([&](EId eId, auto &deathEvents) {
-        auto [playerId, _] = ecm.get<PlayerComponent>();
+    auto [deathSet] = ecm.getAll<DeathEvent>();
+    deathSet.each([&](EId eId, auto &deathEvents) {
+        auto [playerId, _] = ecm.getUnique<PlayerComponent>();
         if (eId == playerId)
         {
             ecm.add<PlayerEvent>(eId, PlayerEvents::DEATH);
             return;
         }
 
-        auto [startTriggerId, _] = ecm.get<StartGameTriggerComponent>();
+        auto [startTriggerId, _] = ecm.getUnique<StartGameTriggerComponent>();
         if (eId == startTriggerId)
         {
             ecm.add<GameEvent>(eId, GameEvents::NEXT_STAGE);
         }
 
         deathEvents.inspect([&](const DeathEvent &deathEvent) {
-            auto &pointsComps = ecm.get<PointsComponent>(eId);
+            auto [pointsComps] = ecm.get<PointsComponent>(eId);
             if (!pointsComps)
                 return;
 

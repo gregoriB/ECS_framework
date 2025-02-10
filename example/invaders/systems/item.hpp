@@ -15,15 +15,18 @@ inline void cleanup(ECM &ecm)
 
 inline void spawnPowerup(ECM &ecm)
 {
-    auto [gameId, gameMetaComps] = ecm.get<GameMetaComponent>();
-    if (ecm.get<PowerupTimeoutEffect>(gameId))
+    auto [gameId, gameMetaComps] = ecm.getUnique<GameMetaComponent>();
+    auto [powerupTimeoutEffect] = ecm.get<PowerupTimeoutEffect>(gameId);
+    if (powerupTimeoutEffect)
         return;
 
-    auto [playerId, _] = ecm.get<PlayerComponent>();
-    if (ecm.get<PowerupEffect>(playerId))
+    auto [playerId, _] = ecm.getUnique<PlayerComponent>();
+    auto [powerupEffect] = ecm.get<PowerupEffect>(playerId);
+    if (powerupEffect)
         return;
 
-    auto &playerPos = ecm.get<PositionComponent>(playerId).peek(&PositionComponent::bounds);
+    auto [positionComps] = ecm.get<PositionComponent>(playerId);
+    auto &playerPos = positionComps.peek(&PositionComponent::bounds);
 
     auto &screenSize = gameMetaComps.peek(&GameMetaComponent::screen);
     float tileSize = gameMetaComps.peek(&GameMetaComponent::tileSize);
@@ -35,7 +38,8 @@ inline void spawnPowerup(ECM &ecm)
 
 inline void processEvents(ECM &ecm)
 {
-    ecm.getAll<PowerupEvent>().each([&](EId eId, auto &powerupEvents) {
+    auto [powerupEventSet] = ecm.getAll<PowerupEvent>();
+    powerupEventSet.each([&](EId eId, auto &powerupEvents) {
         powerupEvents.inspect([&](const PowerupEvent &event) { ecm.add<PowerupEffect>(eId); });
     });
 }

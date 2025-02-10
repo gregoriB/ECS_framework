@@ -54,7 +54,7 @@ inline bool run(ECM &ecm)
     // clang-format on
     cleanup(ecm, cleanupFuncs);
 
-    auto [gameId, gameComps] = ecm.get<GameComponent>();
+    auto [gameId, gameComps] = ecm.getUnique<GameComponent>();
 
     return !gameComps.peek(&GameComponent::isGameOver);
 }

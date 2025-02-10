@@ -11,9 +11,10 @@ inline void cleanup(ECM &ecm)
 
 inline auto update(ECM &ecm)
 {
-    ecm.getAll<DamageEvent>().each([&](EId eId, auto &damageEvents) {
+    auto [damageEventSet] = ecm.getAll<DamageEvent>();
+    damageEventSet.each([&](EId eId, auto &damageEvents) {
         damageEvents.inspect([&](const DamageEvent &damageEvent) {
-            auto &damageComps = ecm.get<DamageComponent>(damageEvent.dealerId);
+            auto [damageComps] = ecm.get<DamageComponent>(damageEvent.dealerId);
             if (!damageComps)
                 return;
 

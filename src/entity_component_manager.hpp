@@ -114,10 +114,9 @@ template <typename EntityId> class EntityComponentManager
      *
      * @return Entity component reference
      */
-    // CHANGE: update return 
-    template <typename T> [[nodiscard]] Components<T> &get(EntityId eId)
+    template <typename... T> [[nodiscard]] std::tuple<Components<T> &...> get(EntityId eId)
     {
-        return getComponents<T>(eId);
+        return {getComponents<T>(eId)...};
     }
 
     /**
@@ -127,7 +126,7 @@ template <typename EntityId> class EntityComponentManager
      */
     // CHANGE: getUnique<Type>();
     template <typename T>
-    [[nodiscard]] std::pair<EntityId, Components<T> &> get()
+    [[nodiscard]] std::pair<EntityId, Components<T> &> getUnique()
         requires(Tags::isUnique<T>())
     {
         auto &cSet = getComponentSet<T>();
@@ -150,8 +149,8 @@ template <typename EntityId> class EntityComponentManager
             return {id, *compsPtr};
 
         // If the set is empty, create a dummy component for a fake entity
-        auto &comps = get<T>(0);
-        return {0, comps};
+        std::tuple<Components<T> &> compsTuple = get<T>(0);
+        return {0, std::get<0>(compsTuple)};
     }
 
     /**
@@ -229,13 +228,7 @@ template <typename EntityId> class EntityComponentManager
         return ComponentSetGroup<Ts...>(std::vector<EntityId>(ids.begin(), ids.end()), std::move(sets));
     }
 
-    template <typename T> [[nodiscard]] ComponentSet<T> &getAll()
-    {
-        return getComponentSet<T>(m_minSetSize);
-    }
-
-    // CHANGE: Consolidate with getAll
-    template <typename... Ts> [[nodiscard]] std::tuple<ComponentSet<Ts> &...> gatherAll()
+    template <typename... Ts> [[nodiscard]] std::tuple<ComponentSet<Ts> &...> getAll()
     {
         return {getComponentSet<Ts>(m_minSetSize)...};
     }
@@ -254,12 +247,9 @@ template <typename EntityId> class EntityComponentManager
     }
 
     // Remove a multiple ids from each set
-    template <typename... Ts, typename... Ids>
-    void remove(Ids... ids)
+    template <typename... Ts, typename... Ids> void remove(Ids... ids)
     {
-        ([&]() {
-            getComponentSet<Ts>(m_minSetSize).erase(ids...);
-        }(), ...);
+        ([&]() { getComponentSet<Ts>(m_minSetSize).erase(ids...); }(), ...);
     }
 
     // Remove a vector ids from each set
@@ -270,7 +260,7 @@ template <typename EntityId> class EntityComponentManager
 
     // Remove a single specified id from each set
     template <typename... Ts> void remove(EntityId eId)
-    { 
+    {
         if constexpr (sizeof...(Ts) == 0)
         {
             removeEntity(eId);
@@ -288,7 +278,7 @@ template <typename EntityId> class EntityComponentManager
 
     void remove(const std::vector<EntityId> &ids)
     {
-        for (const auto& id : ids)
+        for (const auto &id : ids)
             remove(id);
     }
 

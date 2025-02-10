@@ -11,14 +11,15 @@ inline void cleanup(ECM &ecm)
 
 inline auto update(ECM &ecm)
 {
-    auto [playerId, playerComps] = ecm.get<PlayerComponent>();
-    ecm.getAll<PlayerEvent>().each([&](EId eId, auto &playerEvents) {
+    auto [playerId, playerComps] = ecm.getUnique<PlayerComponent>();
+    auto [playerEventSet] = ecm.getAll<PlayerEvent>();
+    playerEventSet.each([&](EId eId, auto &playerEvents) {
         playerEvents.inspect([&](const PlayerEvent &playerEvent) {
             using Event = decltype(playerEvent.event);
             switch (playerEvent.event)
             {
             case Event::DEATH: {
-                auto &livesComps = ecm.get<LivesComponent>(playerId);
+                auto [livesComps] = ecm.get<LivesComponent>(playerId);
                 livesComps.mutate([&](LivesComponent &livesComp) { --livesComp.count; });
                 auto &lifeCount = livesComps.peek(&LivesComponent::count);
                 if (lifeCount <= 0)

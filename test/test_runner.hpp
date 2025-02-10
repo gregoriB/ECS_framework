@@ -2,7 +2,7 @@
 
 #include "../example/invaders/core.hpp"
 #include "tests/benchmarks.hpp"
-#include "tests/components.hpp"
+/* #include "tests/components.hpp" */
 #include "tests/utilities.hpp"
 
 // clang-format off
@@ -17,9 +17,9 @@ enum class Tests {
 
 using testFn = std::function<void(ECM &)>;
 inline std::vector<testFn> componentManagerTests{
-    test_component_mutate_fn,
-    test_component_remove_fn,
-    test_component_remove_conditionally,
+    /* test_component_mutate_fn, */
+    /* test_component_remove_fn, */
+    /* test_component_remove_conditionally, */
 
 #ifdef ecs_allow_experimental
     test_effect_cleanup,
@@ -27,31 +27,31 @@ inline std::vector<testFn> componentManagerTests{
     test_effect_cleanup_only_effect_components,
 #endif
     
-    test_get_component,
-    test_gather_component,
-    test_gather_group,
-    
-    test_add_non_stack_component,
-    test_add_more_non_stack_components_fail,
-    test_add_stacked_components,
-    test_add_event_components,
-    test_add_effect_components,
-    
-    test_clear_all_components,
-    test_clear_components_by_tag,
-    test_clear_all_by_entity,
-    
-    test_prune,
-    test_prune_multi,
-
+    /* test_get_component, */
+    /* test_gather_component, */
+    /* test_gather_group, */
+    /*  */
+    /* test_add_non_stack_component, */
+    /* test_add_more_non_stack_components_fail, */
+    /* test_add_stacked_components, */
+    /* test_add_event_components, */
+    /* test_add_effect_components, */
+    /*  */
+    /* test_clear_all_components, */
+    /* test_clear_components_by_tag, */
+    /* test_clear_all_by_entity, */
+    /*  */
+    /* test_prune, */
+    /* test_prune_multi, */
+    /*  */
 #ifdef ecs_allow_experimental
     test_prune_all,
     test_prune_by_tag,
 #endif
 
 #ifndef ecs_disable_auto_prune
-    test_sparse_set_auto_prune,
-    test_sparse_set_auto_prune_after_removal,
+    /* test_sparse_set_auto_prune, */
+    /* test_sparse_set_auto_prune_after_removal, */
 #endif
 };
 

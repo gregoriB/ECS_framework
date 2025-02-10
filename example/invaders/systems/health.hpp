@@ -19,10 +19,12 @@ inline auto update(ECM &ecm)
                 if (healthComp.current <= 0)
                     ecm.add<DeathEvent>(eId, healthEvent.dealerId);
 
-                if (!ecm.get<ObstacleComponent>(eId))
+                auto [obstacleComps] = ecm.get<ObstacleComponent>(eId);
+                if (!obstacleComps)
                     return;
 
-                ecm.get<SpriteComponent>(eId).mutate([&](SpriteComponent &spriteComp) {
+                auto [spriteComps] = ecm.get<SpriteComponent>(eId);
+                spriteComps.mutate([&](SpriteComponent &spriteComp) {
                     auto [r, g, b, a] = spriteComp.rgba;
                     uint8_t change = 20;
                     spriteComp.rgba.r -= r >= change ? change : 0;

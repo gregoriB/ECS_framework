@@ -21,7 +21,8 @@ inline bool checkFriendlyFire(ECM &ecm, auto &projectileComps, auto &hiveAiComps
 
 inline void handleCollisions(ECM &ecm)
 {
-    ecm.getAll<CollisionCheckEvent>().each([&](EId eId1, auto &checkEvents) {
+    auto [collisionCheckEventSet] = ecm.getAll<CollisionCheckEvent>();
+    collisionCheckEventSet.each([&](EId eId1, auto &checkEvents) {
         auto [projectile1, hiveAiComps1] = ecm.gather<ProjectileComponent, HiveAIComponent>(eId1);
         auto [cX, cY, cW, cH] = checkEvents.peek(&CollisionCheckEvent::bounds).box();
         ecm.gatherGroup<CollidableComponent, PositionComponent>().each(
@@ -40,7 +41,8 @@ inline void handleCollisions(ECM &ecm)
                 if (!isX || !isY)
                     return;
 
-                if (ecm.get<PowerupComponent>(eId2))
+                auto [powerupComps] = ecm.get<PowerupComponent>(eId2);
+                if (powerupComps)
                 {
                     ecm.add<PowerupEvent>(eId1);
                     ecm.add<DamageEvent>(eId2, eId1);

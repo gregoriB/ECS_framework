@@ -14,11 +14,13 @@ inline void cleanup(ECM &ecm)
 
 inline void updateAttackEffect(ECM &ecm)
 {
-    ecm.getAll<AttackEffect>().each([&](EId eId, auto &attackEffects) {
+    auto [attackEffectSet] = ecm.getAll<AttackEffect>();
+    attackEffectSet.each([&](EId eId, auto &attackEffects) {
         // clang-format off
         attackEffects
             .filter([&](const AttackEffect &effect) { 
-                return !ecm.get<ProjectileComponent>(effect.attackId) || effect.timer->hasElapsed();
+                auto [projectileComps] = ecm.get<ProjectileComponent>(effect.attackId);
+                return !projectileComps || effect.timer->hasElapsed();
             })
             .mutate([&](auto &effect) { effect.cleanup = true; });
         // clang-format on
@@ -27,9 +29,10 @@ inline void updateAttackEffect(ECM &ecm)
 
 inline void processAttacks(ECM &ecm)
 {
-    ecm.getAll<AttackEvent>().each([&](EId eId, auto &attackEvents) {
+    auto [attackEventSet] = ecm.getAll<AttackEvent>();
+    attackEventSet.each([&](EId eId, auto &attackEvents) {
         attackEvents.inspect([&](const AttackEvent &attackEvent) {
-            auto &attackEffects = ecm.get<AttackEffect>(eId);
+            auto [attackEffects] = ecm.get<AttackEffect>(eId);
             if (attackEffects)
                 return;
 

@@ -20,7 +20,7 @@ inline EntityId hive(ECM &ecm, float x, float y, float w, float h)
     EntityId hiveId = ecm.createEntity();
     PRINT("CREATE HIVE", hiveId)
     ecm.clear<HiveComponent, HiveMovementEffect>();
-    auto [_, gameMetaComps] = ecm.get<GameMetaComponent>();
+    auto [_, gameMetaComps] = ecm.getUnique<GameMetaComponent>();
     auto &size = gameMetaComps.peek(&GameMetaComponent::screen);
     ecm.add<HiveComponent>(hiveId);
     ecm.add<HiveMovementEffect>(hiveId, Movements::RIGHT);
@@ -82,7 +82,7 @@ inline EntityId createUfo(ECM &ecm, float x, float y)
     EntityId id = ecm.createEntity();
     PRINT("UFO SPAWNED", id)
     ecm.add<UFOAIComponent>(id);
-    auto [_, gameMetaComps] = ecm.get<GameMetaComponent>();
+    auto [_, gameMetaComps] = ecm.getUnique<GameMetaComponent>();
     auto &size = gameMetaComps.peek(&GameMetaComponent::screen);
     const float &tileSize = gameMetaComps.peek(&GameMetaComponent::tileSize);
     float diff = 15;
@@ -106,7 +106,7 @@ inline EntityId createUfo(ECM &ecm, float x, float y)
 inline EntityId hiveAlien(ECM &ecm, float x, float y, float w, float h)
 {
     EntityId id = ecm.createEntity();
-    auto [hiveId, _] = ecm.get<HiveComponent>();
+    auto [hiveId, _] = ecm.getUnique<HiveComponent>();
     float diff = 7;
     ecm.add<CollidableComponent>(id);
     ecm.add<AIComponent>(id);

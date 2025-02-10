@@ -25,7 +25,8 @@ inline void updateOutsideHiveAliens(ECM &ecm, EId hiveId, const HiveComponent &h
     auto [x, y, w, h] = hiveComp.bounds.box();
     for (const auto &eId : ids)
     {
-        auto [aiX, aiY, aiW, aiH] = ecm.get<PositionComponent>(eId).peek(&PositionComponent::bounds).box();
+        auto [positionComps] = ecm.get<PositionComponent>(eId);
+        auto [aiX, aiY, aiW, aiH] = positionComps.peek(&PositionComponent::bounds).box();
         if (aiX <= x)
             ecm.add<LeftAlienComponent>(eId);
         if (aiW >= w)
@@ -35,7 +36,8 @@ inline void updateOutsideHiveAliens(ECM &ecm, EId hiveId, const HiveComponent &h
 
 inline void updateHiveBounds(ECM &ecm, EId hiveId)
 {
-    ecm.get<HiveComponent>(hiveId).mutate([&](HiveComponent &hiveComp) {
+    auto [hiveComps] = ecm.get<HiveComponent>(hiveId);
+    hiveComps.mutate([&](HiveComponent &hiveComp) {
         constexpr float MIN_FLOAT = std::numeric_limits<float>::min();
         constexpr float MAX_FLOAT = std::numeric_limits<float>::max();
 
@@ -85,7 +87,7 @@ inline void handleHiveShift(ECM &ecm, auto &hiveMovementEffects)
 template <typename Movement>
 inline Vector2 calculateSpeed(ECM &ecm, const Vector2 &speed, const Movement &movement)
 {
-    auto [_, gameComps] = ecm.get<GameComponent>();
+    auto [_, gameComps] = ecm.getUnique<GameComponent>();
     float modifier = gameComps.peek(&GameComponent::currentStage) / 2.0f;
     if (modifier < 1)
         modifier = 1;
@@ -115,15 +117,16 @@ inline Vector2 calculateSpeed(ECM &ecm, const Vector2 &speed, const Movement &mo
 
 template <typename Movement> inline bool checkIsOutOfBounds(ECM &ecm, EId hiveId, Movement &movement)
 {
-    auto [gameId, gameComps] = ecm.get<GameComponent>();
-    auto &hiveSpeeds = ecm.get<MovementComponent>(hiveId).peek(&MovementComponent::speeds);
+    auto [gameId, gameComps] = ecm.getUnique<GameComponent>();
+    auto [movementComps] = ecm.get<MovementComponent>(hiveId);
+    auto &hiveSpeeds = movementComps.peek(&MovementComponent::speeds);
 
     auto &hiveAiIds = movement == Movement::LEFT ? ecm.getEntityIds<LeftAlienComponent>()
                                                  : ecm.getEntityIds<RightAlienComponent>();
     if (!hiveAiIds.size())
         return false;
 
-    auto &posComps = ecm.get<PositionComponent>(hiveAiIds[0]);
+    auto [posComps] = ecm.get<PositionComponent>(hiveAiIds[0]);
     return !!posComps.find([&](const PositionComponent &positionComp) {
         auto [x, y] = calculateSpeed(ecm, hiveSpeeds, movement);
         Bounds newBounds{
@@ -142,7 +145,7 @@ template <typename Movement> inline bool checkIsOutOfBounds(ECM &ecm, EId hiveId
 
 inline bool checkHiveOutOfBounds(ECM &ecm, EId hiveId, auto &hiveMovementEffects)
 {
-    auto [leftAlienComps, rightAlienComps] = ecm.gatherAll<LeftAlienComponent, RightAlienComponent>();
+    auto [leftAlienComps, rightAlienComps] = ecm.getAll<LeftAlienComponent, RightAlienComponent>();
     if (!leftAlienComps || !rightAlienComps)
         updateHiveBounds(ecm, hiveId);
 
@@ -164,7 +167,8 @@ inline bool checkHiveOutOfBounds(ECM &ecm, EId hiveId, auto &hiveMovementEffects
 inline void moveHiveAI(ECM &ecm, EId hiveId, auto &hiveMovementEffects)
 {
     auto movement = hiveMovementEffects.peek(&HiveMovementEffect::movement);
-    auto &speeds = ecm.get<MovementComponent>(hiveId).peek(&MovementComponent::speeds);
+    auto [movementComps] = ecm.get<MovementComponent>(hiveId);
+    auto &speeds = movementComps.peek(&MovementComponent::speeds);
 
     auto &allHiveAiIds = ecm.getEntityIds<HiveAIComponent>();
     if (!allHiveAiIds.size())
@@ -207,7 +211,8 @@ inline bool checkShouldHiveAIMove(Components<HiveMovementEffect> &hiveMovementEf
 
 inline void updateHive(ECM &ecm)
 {
-    ecm.getAll<HiveMovementEffect>().each([&](EId hiveId, auto &hiveMovementEffects) {
+    auto [hiveMovementSet] = ecm.getAll<HiveMovementEffect>();
+    hiveMovementSet.each([&](EId hiveId, auto &hiveMovementEffects) {
         if (checkHiveOutOfBounds(ecm, hiveId, hiveMovementEffects))
             handleHiveShift(ecm, hiveMovementEffects);
 
@@ -230,11 +235,11 @@ inline bool containsId(const auto &vec, EntityId id)
 
 inline void handleHiveAttack(ECM &ecm)
 {
-    auto [hiveId, hiveComps] = ecm.get<HiveComponent>();
+    auto [hiveId, hiveComps] = ecm.getUnique<HiveComponent>();
     if (!hiveId)
         return;
 
-    auto &aiTimeoutEffects = ecm.get<AITimeoutEffect>(hiveId);
+    auto [aiTimeoutEffects] = ecm.get<AITimeoutEffect>(hiveId);
     if (aiTimeoutEffects)
     {
         auto elapsedEffect = aiTimeoutEffects.find(
@@ -272,11 +277,13 @@ inline void handleHiveAttack(ECM &ecm)
 
 inline void updateUFO(ECM &ecm)
 {
-    auto [gameId, gameMetaComps] = ecm.get<GameMetaComponent>();
-    if (ecm.get<UFOTimeoutEffect>(gameId))
+    auto [gameId, gameMetaComps] = ecm.getUnique<GameMetaComponent>();
+    auto [ufoTimeoutEffect] = ecm.get<UFOTimeoutEffect>(gameId);
+    if (ufoTimeoutEffect)
         return;
 
-    if (ecm.getAll<UFOAIComponent>())
+    auto [ufoAISet] = ecm.getAll<UFOAIComponent>();
+    if (ufoAISet)
         return;
 
     const float &tileSize = gameMetaComps.peek(&GameMetaComponent::tileSize);
@@ -286,8 +293,10 @@ inline void updateUFO(ECM &ecm)
 
 inline void handleUFOAttack(ECM &ecm)
 {
-    ecm.getAll<UFOAIComponent>().each([&](EId eId, auto &ufoAiComps) {
-        if (ecm.get<AITimeoutEffect>(eId))
+    auto [ufoAISet] = ecm.getAll<UFOAIComponent>();
+    ufoAISet.each([&](EId eId, auto &ufoAiComps) {
+        auto [aiTimeoutEffect] = ecm.get<AITimeoutEffect>(eId);
+        if (aiTimeoutEffect)
             return;
 
         float randomDelay = std::rand() % 5;

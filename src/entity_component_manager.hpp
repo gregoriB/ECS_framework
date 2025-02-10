@@ -114,6 +114,7 @@ template <typename EntityId> class EntityComponentManager
      *
      * @return Entity component reference
      */
+    // CHANGE: update return 
     template <typename T> [[nodiscard]] Components<T> &get(EntityId eId)
     {
         return getComponents<T>(eId);
@@ -124,6 +125,7 @@ template <typename EntityId> class EntityComponentManager
      *
      * @return std::pair containing the entity id and component reference
      */
+    // CHANGE: getUnique<Type>();
     template <typename T>
     [[nodiscard]] std::pair<EntityId, Components<T> &> get()
         requires(Tags::isUnique<T>())
@@ -164,6 +166,7 @@ template <typename EntityId> class EntityComponentManager
         return getComponentsHelper<T>(getComponentSet<T>(), id, ids...);
     }
 
+    // CHANGE: Consolidate with get
     template <typename... T> [[nodiscard]] std::tuple<Components<T> &...> gather(EntityId eId)
     {
         return {getComponents<T>(eId)...};
@@ -188,6 +191,7 @@ template <typename EntityId> class EntityComponentManager
         return std::vector<EntityId>(ids.begin(), ids.end());
     }
 
+    // CHANGE: getCommonGroup?
     template <typename... Ts> ComponentSetGroup<Ts...> gatherGroup()
     {
         bool shouldBreak{};
@@ -230,6 +234,7 @@ template <typename EntityId> class EntityComponentManager
         return getComponentSet<T>(m_minSetSize);
     }
 
+    // CHANGE: Consolidate with getAll
     template <typename... Ts> [[nodiscard]] std::tuple<ComponentSet<Ts> &...> gatherAll()
     {
         return {getComponentSet<Ts>(m_minSetSize)...};
@@ -248,36 +253,43 @@ template <typename EntityId> class EntityComponentManager
         clearComponentsByTag<Tag>();
     }
 
-    template <typename... Ts> void clearByEntity(EntityId eId)
+    // Remove a multiple ids from each set
+    template <typename... Ts, typename... Ids>
+    void remove(Ids... ids)
     {
-#ifdef ecs_allow_debug
-        (debugCheckRequired<Ts>("Clear by entity"), ...);
-#endif
-        clearEntityComponent<Ts...>(eId);
+        ([&]() {
+            getComponentSet<Ts>(m_minSetSize).erase(ids...);
+        }(), ...);
     }
 
-    template <typename... Ts> void clearEntities()
+    // Remove a vector ids from each set
+    template <typename... Ts> void remove(const std::vector<EntityId> &ids)
     {
-        // TODO Performance : Use a less heavy-handed approach
-        (
-            [&]() {
-                auto &ids = getEntityIds<Ts>();
-                for (const auto &id : ids)
-                    clearEntity(id);
-            }(),
-            ...);
+        (getComponentSet<Ts>().erase(ids), ...);
     }
 
-    template <typename... Ids> void clearEntities(Ids... ids)
-    {
-        // TODO Performance : Use a less heavy-handed approach
-        (clearEntity(ids), ...);
+    // Remove a single specified id from each set
+    template <typename... Ts> void remove(EntityId eId)
+    { 
+        if constexpr (sizeof...(Ts) == 0)
+        {
+            removeEntity(eId);
+            return;
+        }
+
+        (getComponentSet<Ts>().erase(eId), ...);
     }
 
-    void clearEntity(EntityId eId)
+    template <typename... Ids> void remove(Ids... ids)
     {
-        for (auto iter = getStoredComponents().begin(); iter != getStoredComponents().end(); ++iter)
-            getSetFromIterator(iter).erase(eId);
+        // TODO Performance : Use a less heavy-handed approach if possible
+        (removeEntity(ids), ...);
+    }
+
+    void remove(const std::vector<EntityId> &ids)
+    {
+        for (const auto& id : ids)
+            remove(id);
     }
 
     template <typename... Ts> void prune()
@@ -295,6 +307,12 @@ template <typename EntityId> class EntityComponentManager
     EntityComponentManager &operator=(const EntityComponentManager &) = delete;
 
   private:
+    void removeEntity(EntityId eId)
+    {
+        for (auto iter = getStoredComponents().begin(); iter != getStoredComponents().end(); ++iter)
+            getSetFromIterator(iter).erase(eId);
+    }
+
     template <typename T, typename... Args> void addUnique(EntityId eId, Args... args)
     {
         addComponent<T>(eId, args...);

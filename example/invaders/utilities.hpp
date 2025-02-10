@@ -84,7 +84,7 @@ inline void nextStage(ECM &ecm, int stage)
 {
     PRINT("STAGE:", stage, "LOADED")
     ecm.clear<HiveMovementEffect>();
-    ecm.clearEntities<HiveAIComponent>();
+    ecm.remove(ecm.getEntityIds<HiveAIComponent>());
     stageBuilder(ecm, Stages::getStage(stage));
 };
 

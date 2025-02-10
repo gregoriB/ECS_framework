@@ -9,7 +9,7 @@ inline void cleanup(ECM &ecm)
 {
     auto &deadIds = ecm.getEntityIds<DeathComponent>();
     for (const auto &id : deadIds)
-        ecm.clearEntity(id);
+        ecm.remove(id);
 }
 
 inline auto update(ECM &ecm)

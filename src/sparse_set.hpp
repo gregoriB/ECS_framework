@@ -246,6 +246,18 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
         m_pointers[id1] = -1;
     }
 
+    template <typename... Ids> void erase (Id id, Ids... ids)
+    {
+        erase(id);
+        (erase(ids), ...);
+    }
+
+    void erase (std::vector<Id> ids)
+    {
+        for (const auto& id : ids)
+            erase(id);
+    }
+
     [[nodiscard]] bool contains(Id id)
     {
         return id < m_pointers.size() && m_pointers[id] != -1;

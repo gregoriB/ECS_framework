@@ -243,7 +243,7 @@ inline void handleHiveAttack(ECM &ecm)
         if (!elapsedEffect)
             return;
 
-        ecm.clearByEntity<AITimeoutEffect>(hiveId);
+        ecm.remove<AITimeoutEffect>(hiveId);
     }
 
     auto &attackingAIs = ecm.getEntityIds<HiveAIComponent, AttackEffect>();

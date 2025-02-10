@@ -19,8 +19,7 @@ inline EntityId hive(ECM &ecm, float x, float y, float w, float h)
 {
     EntityId hiveId = ecm.createEntity();
     PRINT("CREATE HIVE", hiveId)
-    ecm.clear<HiveComponent>();
-    ecm.clear<HiveMovementEffect>();
+    ecm.clear<HiveComponent, HiveMovementEffect>();
     auto [_, gameMetaComps] = ecm.get<GameMetaComponent>();
     auto &size = gameMetaComps.peek(&GameMetaComponent::screen);
     ecm.add<HiveComponent>(hiveId);

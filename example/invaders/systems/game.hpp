@@ -36,7 +36,8 @@ inline auto update(ECM &ecm)
                     {
                         gameComp.currentStage = 1;
                         Utilties::nextStage(ecm, 1);
-                        ecm.clearEntities<TitleScreenComponent>();
+                        auto entities = ecm.getEntityIds<TitleScreenComponent>();
+                        ecm.remove(entities);
                     }
                     else
                     {

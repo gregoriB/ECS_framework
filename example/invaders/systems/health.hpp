@@ -19,8 +19,7 @@ inline auto update(ECM &ecm)
                 if (healthComp.current <= 0)
                     ecm.add<DeathEvent>(eId, healthEvent.dealerId);
 
-                auto [obstacleComps] = ecm.get<ObstacleComponent>(eId);
-                if (!obstacleComps)
+                if (!ecm.contains<ObstacleComponent>(eId))
                     return;
 
                 auto [spriteComps] = ecm.get<SpriteComponent>(eId);

@@ -15,8 +15,7 @@ inline void movePlayer(ECM &ecm)
     float dt = Utilties::getDeltaTime(ecm);
     auto [playerInputEventSet] = ecm.getAll<PlayerInputEvent>();
     playerInputEventSet.each([&](EId eId, auto &playerInputEvents) {
-        auto [deactivatedComps] = ecm.get<DeactivatedComponent>(eId);
-        bool isDeactivated = !!deactivatedComps;
+        bool isDeactivated = ecm.contains<DeactivatedComponent>(eId);
         auto [movementComps] = ecm.get<MovementComponent>(eId);
         auto &speeds = movementComps.peek(&MovementComponent::speeds);
         float baseSpeed = speeds.x * dt;

@@ -144,8 +144,7 @@ template <typename Movement> inline bool checkIsOutOfBounds(ECM &ecm, EId hiveId
 
 inline bool checkHiveOutOfBounds(ECM &ecm, EId hiveId, auto &hiveMovementEffects)
 {
-    auto [leftAlienComps, rightAlienComps] = ecm.getAll<LeftAlienComponent, RightAlienComponent>();
-    if (!leftAlienComps || !rightAlienComps)
+    if (!ecm.exists<LeftAlienComponent>() || !ecm.exists<RightAlienComponent>())
         updateHiveBounds(ecm, hiveId);
 
     auto movement = hiveMovementEffects.peek(&HiveMovementEffect::movement);
@@ -294,8 +293,7 @@ inline void handleUFOAttack(ECM &ecm)
 {
     auto [ufoAISet] = ecm.getAll<UFOAIComponent>();
     ufoAISet.each([&](EId eId, auto &ufoAiComps) {
-        auto [aiTimeoutEffect] = ecm.get<AITimeoutEffect>(eId);
-        if (aiTimeoutEffect)
+        if (ecm.contains<AITimeoutEffect>(eId))
             return;
 
         float randomDelay = std::rand() % 5;

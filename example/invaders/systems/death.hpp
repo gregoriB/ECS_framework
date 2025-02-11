@@ -30,8 +30,7 @@ inline auto update(ECM &ecm)
         }
 
         deathEvents.inspect([&](const DeathEvent &deathEvent) {
-            auto [pointsComps] = ecm.get<PointsComponent>(eId);
-            if (!pointsComps)
+            if (!ecm.contains<PointsComponent>(eId))
                 return;
 
             ecm.add<ScoreEvent>(deathEvent.killedBy, eId);

@@ -25,11 +25,9 @@ inline void handleCollisions(ECM &ecm)
     collisionCheckEventSet.each([&](EId eId1, auto &checkEvents) {
         auto [projectile1, hiveAiComps1] = ecm.get<ProjectileComponent, HiveAIComponent>(eId1);
         auto [cX, cY, cW, cH] = checkEvents.peek(&CollisionCheckEvent::bounds).box();
-        ecm.getGroup<CollidableComponent, PositionComponent>().each(
-            [&](EId eId2, auto &collidableComps2, auto &positionComps2) {
-                if (eId1 == eId2)
-                    return;
-
+        ecm.getGroup<CollidableComponent, PositionComponent>()
+            .select([&](EId eId2) { return eId1 != eId2; })
+            .each([&](EId eId2, auto &collidableComps2, auto &positionComps2) {
                 auto [projectile2, hiveAiComps2] = ecm.get<ProjectileComponent, HiveAIComponent>(eId2);
                 if (checkFriendlyFire(ecm, projectile2, hiveAiComps1) ||
                     checkFriendlyFire(ecm, projectile1, hiveAiComps2))
@@ -41,8 +39,7 @@ inline void handleCollisions(ECM &ecm)
                 if (!isX || !isY)
                     return;
 
-                auto [powerupComps] = ecm.get<PowerupComponent>(eId2);
-                if (powerupComps)
+                if (ecm.contains<PowerupComponent>(eId2))
                 {
                     ecm.add<PowerupEvent>(eId1);
                     ecm.add<DamageEvent>(eId2, eId1);

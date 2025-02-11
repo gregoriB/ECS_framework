@@ -74,8 +74,7 @@ inline void updateOtherMovement(ECM &ecm)
             // TODO Task : Move boundary checks to collision system
             if (checkOutOfBounds(gameBounds, newBounds))
             {
-                auto [projectileComps, ufoAiComps] = ecm.get<ProjectileComponent, UFOAIComponent>(eId);
-                if (!projectileComps && !ufoAiComps)
+                if (!ecm.contains<ProjectileComponent>(eId) && !ecm.contains<UFOAIComponent>(eId))
                     return;
 
                 if (newH < gY || newY > gH || newW < gX || newX > gW)

@@ -16,13 +16,11 @@ inline void cleanup(ECM &ecm)
 inline void spawnPowerup(ECM &ecm)
 {
     auto [gameId, gameMetaComps] = ecm.getUnique<GameMetaComponent>();
-    auto [powerupTimeoutEffect] = ecm.get<PowerupTimeoutEffect>(gameId);
-    if (powerupTimeoutEffect)
+    if (ecm.contains<PowerupTimeoutEffect>(gameId))
         return;
 
     auto [playerId, _] = ecm.getUnique<PlayerComponent>();
-    auto [powerupEffect] = ecm.get<PowerupEffect>(playerId);
-    if (powerupEffect)
+    if (ecm.contains<PowerupEffect>(playerId))
         return;
 
     auto [positionComps] = ecm.get<PositionComponent>(playerId);

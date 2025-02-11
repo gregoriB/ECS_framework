@@ -12,16 +12,24 @@ template <typename EntityId, typename... Ts> class Grouping
   private:
     std::vector<EntityId> m_ids;
     std::tuple<Ts *...> m_values;
+    std::optional<std::function<bool(EntityId)>> m_filterFn;
 
   public:
     Grouping(std::vector<EntityId> _ids = {}) {};
     Grouping(std::vector<EntityId> _ids, std::tuple<Ts *...> _values) : m_ids(_ids), m_values(_values) {};
 
-    template <typename Func> void each(Func &&fn) const
+    template <typename Func> void each(Func &&fn)
     {
         for (const auto &id : m_ids)
+        {
+            if (m_filterFn.has_value())
+                if (!m_filterFn.value()(id))
+                    continue;
             // TODO Safety : Add null set check and handling
             fn(id, *std::get<Ts *>(m_values)->get(id)...);
+        }
+
+        m_filterFn.reset();
     }
 
     [[nodiscard]] size_t size() const
@@ -37,6 +45,13 @@ template <typename EntityId, typename... Ts> class Grouping
     [[nodiscard]] const std::vector<EntityId> &getIds() const
     {
         return m_ids;
+    }
+
+    // TODO Reevaluate : Not sure whether or not this is really worth keeping as it currently is
+    template <typename Func> Grouping<EntityId, Ts...> &select(Func &&fn)
+    {
+        m_filterFn = fn;
+        return (*this);
     }
 };
 
@@ -119,12 +134,32 @@ template <typename EntityId> class EntityComponentManager
         return {getComponents<T>(eId)...};
     }
 
+    template <typename T> [[nodiscard]] bool contains(EntityId eId)
+    {
+        auto cSetPtr = getComponentSetPtr<T>();
+        if (!cSetPtr)
+            return false;
+
+        if (!cSetPtr->get(eId))
+            return false;
+
+        return true;
+    }
+
+    template <typename T> [[nodiscard]] bool exists()
+    {
+        auto cSetPtr = getComponentSetPtr<T>();
+        if (!cSetPtr)
+            return false;
+
+        return true;
+    }
+
     /**
      * @brief Get a specified UNIQUE component
      *
      * @return std::pair containing the entity id and component reference
      */
-    // CHANGE: getUnique<Type>();
     template <typename T>
     [[nodiscard]] std::pair<EntityId, Components<T> &> getUnique()
         requires(Tags::isUnique<T>())
@@ -204,7 +239,9 @@ template <typename EntityId> class EntityComponentManager
                 }
                 else
                 {
-                    // TODO Task : Reevalue auto-pruning on the component set .contains(id) call instead
+                    // TODO Task : Reevalue auto-pruning on the component set
+                    // Maybe do it on .contains(id) call instead, for each set element
+                    // which contains but evaluates to falsy
                     cSet.prune();
                     for (auto iter = ids.begin(); iter != ids.end();)
                         iter = cSet.contains(*iter) ? std::next(iter) : ids.erase(iter);
@@ -362,6 +399,16 @@ template <typename EntityId> class EntityComponentManager
     template <typename T> ComponentSet<T> &getComponentSet()
     {
         return getComponentSet<T>(m_standardSetSize);
+    }
+
+    template <typename T> ComponentSet<T> *getComponentSetPtr()
+    {
+        auto hash = getComponentHash<T>();
+        auto iter = getStoredComponents().find(hash);
+        if (iter == getStoredComponents().end())
+            return nullptr;
+
+        return &castErasedTo<T>(iter);
     }
 
     template <typename T> ComponentSet<T> &getComponentSet(size_t maxSize)
@@ -667,5 +714,36 @@ template <typename EntityId> class EntityComponentManager
             }
         }
     }
+
 #endif
+
+#ifdef ecs_allow_unsafe
+  public:
+#else
+  private:
+#endif
+    template <typename... Ts> [[nodiscard]] std::tuple<Components<Ts> *...> getUnsafe(EntityId eId)
+    {
+        std::tuple<Components<Ts> *...> components{};
+
+        (
+            [&]() {
+                auto cSetPtr = getComponentSetPtr<Ts>();
+                if (!cSetPtr)
+                {
+                    std::get<Components<Ts> *>(components) = nullptr;
+                    return;
+                }
+
+                std::get<Components<Ts> *>(components) = cSetPtr->get(eId);
+            }(),
+            ...);
+
+        return components;
+    }
+
+    template <typename... Ts> [[nodiscard]] std::tuple<ComponentSet<Ts> *...> getAllUnsafe()
+    {
+        return {getComponentSetPtr<Ts>()...};
+    }
 };

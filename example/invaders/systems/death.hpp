@@ -15,10 +15,12 @@ inline void cleanup(ECM &ecm)
 inline auto update(ECM &ecm)
 {
     auto [deathSet] = ecm.getAll<DeathEvent>();
-    deathSet.each([&](EId eId, auto &deathEvents) {
+    deathSet.each([&](EId eId, Components<DeathEvent> &deathEvents) {
         auto [playerId, _] = ecm.getUnique<PlayerComponent>();
         if (eId == playerId)
         {
+            deathEvents.inspect(
+                [&](const DeathEvent &deathEvent) { PRINT("PLAYER KILLED BY ", deathEvent.killedBy) });
             ecm.add<PlayerEvent>(eId, PlayerEvents::DEATH);
             return;
         }

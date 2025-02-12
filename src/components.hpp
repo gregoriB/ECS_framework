@@ -534,21 +534,16 @@ template <typename T> class Components
   private:
 #endif
     /*
-     * Allows direct access to components via pointer stored within the components wrapper.
-     * Use cautiously as this bypasses all safeguards in place when using the
-     * regular approach to accessing components. This is only intended to be used as an
-     * escape hatch if some specific case arises that does not have a proper fix.
+     * Allows direct access to components stored within the components wrapper.
+     * Be aware that this bypasses all safeguards in place when using the
+     * regular approach to accessing components.
      */
-    [[nodiscard]] std::vector<T *> getUnsafe()
+    [[nodiscard]] std::vector<T &> unpack()
     {
-
-        if (isModified())
-            return m_modified;
-
-        std::vector<T *> vec;
+        std::vector<T &> vec;
 
         for (auto &comp : *this)
-            vec.push_back(&comp);
+            vec.push_back(comp);
 
         return std::move(vec);
     }

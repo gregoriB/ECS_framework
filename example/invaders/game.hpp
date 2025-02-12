@@ -4,36 +4,59 @@
 #include "renderer.hpp"
 #include "update.hpp"
 #include "utilities.hpp"
+#include <stdexcept>
 
-class Game
+class Benchmark
 {
   public:
-    void run()
-    {
-        if (!init())
-            return;
+    float average;
+    int cycles;
 
-        m_renderManager.startRender();
-        withBenchmarks([&]() -> int { return loop(); });
+    void printBenchmarks()
+    {
+        PRINT("average frame time:", average, "for", cycles, "frames\n", "  average FPS:", getFramerate());
     }
 
-  private:
-    inline void withBenchmarks(std::function<float()> fn)
+    void printBenchData()
+    {
+        PRINT("AVERAGE:", average, "CYCLES:", cycles, "FRAMERATE:", getFramerate())
+    }
+
+    void run(std::function<float()> fn)
     {
         auto start = std::chrono::high_resolution_clock::now();
 
-        int cycles = fn();
+        cycles = fn();
         if (cycles == 0)
             cycles = 1;
 
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> duration = end - start;
-        auto avg = duration.count() / cycles;
-        auto framerate = cycles / (avg * cycles);
-
-        PRINT("average frame time:", avg, "for", cycles, "frames\n", "  average FPS:", framerate);
+        average = duration.count() / cycles;
     };
 
+    float getFramerate()
+    {
+        return cycles / (average * cycles);
+    }
+};
+
+class Game
+{
+  public:
+    Benchmark run(int cycles = 0)
+    {
+        if (!init())
+            throw std::runtime_error("INIT FAILED");
+
+        m_renderManager.startRender();
+        Benchmark benchmark;
+        benchmark.run([&]() -> int { return loop(cycles); });
+
+        return benchmark;
+    }
+
+  private:
     bool init()
     {
         try
@@ -52,10 +75,9 @@ class Game
         return true;
     }
 
-    int loop()
+    int loop(int limit = 0)
     {
         int cycles{0};
-        int limit{20000000};
 
         std::cout << "\n $$$$$ STARTING GAME $$$$$ \n";
         bool quit{false};
@@ -63,7 +85,8 @@ class Game
 
         while (!quit)
         {
-            if (cycles++ > limit)
+            cycles++;
+            if (cycles++ > limit && limit)
                 break;
 
             /* PRINT("\n ~~~ CYCLE:", cycles, "~~~\n") */

@@ -22,10 +22,9 @@ inline auto update(ECM &ecm)
                 auto [livesComps] = ecm.get<LivesComponent>(playerId);
                 livesComps.mutate([&](LivesComponent &livesComp) { --livesComp.count; });
                 auto &lifeCount = livesComps.peek(&LivesComponent::count);
+                ecm.add<UIEvent>(eId, UIEvents::UPDATE_LIVES);
                 if (lifeCount <= 0)
                     ecm.add<GameEvent>(eId, GameEvents::GAME_OVER);
-                else
-                    ecm.add<UIEvent>(eId, UIEvents::UPDATE_LIVES);
 
                 break;
             }

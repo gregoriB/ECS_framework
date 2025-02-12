@@ -42,7 +42,7 @@ struct ScreenConfig
     int height = 480;
 };
 
-inline const int SCREEN_FPS = 30;
+inline const int SCREEN_FPS = 300000;
 inline const int SCREEN_TICKS_PER_FRAME = 1000 / SCREEN_FPS;
 
 class Vector2

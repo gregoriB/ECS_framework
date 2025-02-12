@@ -12,7 +12,6 @@ template <typename EntityId, typename... Ts> class Grouping
   private:
     std::vector<EntityId> m_ids;
     std::tuple<Ts *...> m_values;
-    std::optional<std::function<bool(EntityId)>> m_filterFn;
 
   public:
     Grouping(std::vector<EntityId> _ids = {}) {};
@@ -22,14 +21,18 @@ template <typename EntityId, typename... Ts> class Grouping
     {
         for (const auto &id : m_ids)
         {
+#ifdef ecs_allow_experimental
             if (m_filterFn.has_value())
                 if (!m_filterFn.value()(id))
                     continue;
+#endif
             // TODO Safety : Add null set check and handling
             fn(id, *std::get<Ts *>(m_values)->get(id)...);
         }
 
+#ifdef ecs_allow_experimental
         m_filterFn.reset();
+#endif
     }
 
     [[nodiscard]] size_t size() const
@@ -47,12 +50,17 @@ template <typename EntityId, typename... Ts> class Grouping
         return m_ids;
     }
 
-    // TODO Reevaluate : Not sure whether or not this is really worth keeping as it currently is
+#ifdef ecs_allow_experimental
+  private:
+    std::optional<std::function<bool(EntityId)>> m_filterFn;
+
+  public:
     template <typename Func> Grouping<EntityId, Ts...> &select(Func &&fn)
     {
         m_filterFn = fn;
         return (*this);
     }
+#endif
 };
 
 template <typename EntityId> class EntityComponentManager
@@ -134,6 +142,13 @@ template <typename EntityId> class EntityComponentManager
         return {getComponents<T>(eId)...};
     }
 
+    /**
+     * @brief Check whether or not the component set contains the entity id
+     *
+     * @param Entity Id
+     *
+     * @return Bool - true if contains the entity
+     */
     template <typename T> [[nodiscard]] bool contains(EntityId eId)
     {
         auto cSetPtr = getComponentSetPtr<T>();
@@ -146,10 +161,15 @@ template <typename EntityId> class EntityComponentManager
         return true;
     }
 
+    /**
+     * @brief Check whether or not the component set exists
+     *
+     * @return Bool - true if component set exists
+     */
     template <typename T> [[nodiscard]] bool exists()
     {
         auto cSetPtr = getComponentSetPtr<T>();
-        if (!cSetPtr)
+        if (!cSetPtr || !(*cSetPtr))
             return false;
 
         return true;
@@ -219,9 +239,15 @@ template <typename EntityId> class EntityComponentManager
         return std::vector<EntityId>(ids.begin(), ids.end());
     }
 
-    // CHANGE: getCommonGroup?
+    /**
+     * @brief Find overlapping entities for the specified types
+     *
+     * Creates a group of entities with all of the specified types in common
+     *
+     * @return Grouping of entities
+     */
+    // CHANGE NAME: group() , groupCommon() , groupOverlapping() , groupShared() ?
     template <typename... Ts> ComponentSetGroup<Ts...> getGroup()
-    // CHANGE: Consolidate with get
     {
         bool shouldBreak{};
         std::tuple<ComponentSet<Ts> *...> sets{};
@@ -260,11 +286,19 @@ template <typename EntityId> class EntityComponentManager
         return ComponentSetGroup<Ts...>(std::vector<EntityId>(ids.begin(), ids.end()), std::move(sets));
     }
 
+    /**
+     * @brief Gets entire component sets
+     *
+     * @return Container of component sets
+     */
     template <typename... Ts> [[nodiscard]] std::tuple<ComponentSet<Ts> &...> getAll()
     {
         return {getComponentSet<Ts>(m_minSetSize)...};
     }
 
+    /**
+     * @brief Clear entire component sets
+     */
     template <typename... Ts> void clear()
     {
 #ifdef ecs_allow_debug
@@ -273,19 +307,25 @@ template <typename EntityId> class EntityComponentManager
         clearComponents<Ts...>();
     }
 
-    // Remove a multiple ids from each set
-    template <typename... Ts, typename... Ids> void remove(Ids... ids)
-    {
-        ([&]() { getComponentSet<Ts>(m_minSetSize).erase(ids...); }(), ...);
-    }
-
-    // Remove a vector ids from each set
+    /**
+     * @brief Remove specified ids from each specified set
+     */
     template <typename... Ts> void remove(const std::vector<EntityId> &ids)
     {
         (getComponentSet<Ts>().erase(ids), ...);
     }
 
-    // Remove a single specified id from each set
+    /**
+     * @brief Remove specified ids from each specified set
+     */
+    template <typename... Ts, typename... Ids> void remove(Ids... ids)
+    {
+        ([&]() { getComponentSet<Ts>(m_minSetSize).erase(ids...); }(), ...);
+    }
+
+    /**
+     * @brief Remove the id from each specified set
+     */
     template <typename... Ts> void remove(EntityId eId)
     {
         if constexpr (sizeof...(Ts) == 0)
@@ -297,23 +337,35 @@ template <typename EntityId> class EntityComponentManager
         (getComponentSet<Ts>().erase(eId), ...);
     }
 
-    template <typename... Ids> void remove(Ids... ids)
-    {
-        // TODO Performance : Use a less heavy-handed approach if possible
-        (removeEntity(ids), ...);
-    }
-
+    /**
+     * @brief Remove specified ids from EVERY set
+     */
     void remove(const std::vector<EntityId> &ids)
     {
         for (const auto &id : ids)
             remove(id);
     }
 
+    /**
+     * @brief Remove specified ids from EVERY set
+     */
+    template <typename... Ids> void remove(Ids... ids)
+    {
+        // TODO Performance : Use a less heavy-handed approach if possible
+        (removeEntity(ids), ...);
+    }
+
+    /**
+     * @brief Iterate over and remove empty components from the specified sets
+     */
     template <typename... Ts> void prune()
     {
         (prune<Ts>(getComponentHash<Ts>()), ...);
     }
 
+    /**
+     * @brief Stores a transformation function for the specified component
+     */
     template <typename T> constexpr void registerTransformation(TransformationFn<T> transformationFn)
     {
         auto casted = reinterpret_cast<StoredTransformationFn &>(transformationFn);

@@ -26,7 +26,7 @@ inline auto update(ECM &ecm)
                 }
                 case GameEvents::GAME_OVER: {
                     PRINT("GAME OVER")
-                    Utilties::nextStage(ecm, -1);
+                    Utilties::nextStage(ecm, -999);
                     auto [playerId, _] = ecm.getUnique<PlayerComponent>();
                     ecm.add<DeactivatedComponent>(playerId);
                     break;

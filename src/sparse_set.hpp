@@ -3,35 +3,10 @@
 #include "components.hpp"
 #include "core.hpp"
 #include "utilities.hpp"
+#include "base_sparse_set.hpp"
 
-template <typename Id, typename T> class BaseSparseSet
-{
-  protected:
-    using EachFn = std::function<void(Id, T &)>;
-    using BreakableEachFn = std::function<bool(Id, T &)>;
-
-  public:
-    template <typename EntityId> friend class EntityComponentManager;
-    virtual ~BaseSparseSet() = default;
-
-    virtual void erase(Id id) = 0;
-    virtual size_t size() const = 0;
-
-    template <typename Func> void each(Func fn)
-    {
-    }
-
-  private:
-    void eachWithEmpty(EachFn fn)
-    {
-    }
-
-    virtual void prune()
-    {
-    }
-};
-
-template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Components<DefaultComponent>>
+namespace ECS {
+template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, ComponentsWrapper<DefaultComponent>>
 {
   public:
     template <typename EntityId> friend class EntityComponentManager;
@@ -72,7 +47,7 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
     {
         static_assert(std::is_invocable_v<Func, Id, T &>, "Each function must take T& as argument.");
 
-        if constexpr (ReturnsBool<Func, Id, T &>)
+        if constexpr (Utilities::ReturnsBool<Func, Id, T &>)
             eachWithBreak(func);
         else
             eachNoBreak(func);
@@ -298,4 +273,5 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
     {
         return m_ids.size();
     }
+};
 };

@@ -1,9 +1,11 @@
 #pragma once
 
-#include "core.hpp"
 #include "timer.hpp"
 #include "utilities.hpp"
 
+constexpr bool defaultComponentStacking = false;
+
+namespace ECS {
 namespace Tags
 {
 
@@ -39,6 +41,12 @@ struct Effect
     {
     }
 };
+
+namespace Utils {
+template <typename T, typename Base> [[nodiscard]] constexpr bool isBase()
+{
+    return Utilities::isBase<T, Base>();
+}
 
 template <typename T> bool constexpr isTransform()
 {
@@ -94,4 +102,6 @@ template <typename T> constexpr bool shouldStack()
     return shouldDefaultToStack();
 }
 
+}
+}
 } // namespace Tags

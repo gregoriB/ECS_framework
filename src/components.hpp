@@ -4,16 +4,17 @@
 #include "core.hpp"
 #include "tags.hpp"
 #include "utilities.hpp"
-#include <stdexcept>
-#include <type_traits>
 
-template <typename T> using Transformer = std::function<T(T &)>;
+namespace ECS {
 
-struct DefaultComponent
+enum class Transformation
 {
+    DEFAULT,
+    PRESERVE,
+    TRANSFORM
 };
 
-template <typename T> class Components
+template <typename T> class ComponentsWrapper
 {
   public:
     enum class ComponentFlags
@@ -22,14 +23,16 @@ template <typename T> class Components
         EMPTY,
     };
 
-    Components(ComponentFlags _flag)
+    ComponentsWrapper(ComponentFlags _flag)
     {
     }
 
-    template <typename... Args> Components(Args... _args)
+    template <typename... Args> ComponentsWrapper(Args... _args)
     {
         emplace(_args...);
     }
+
+    template <typename U> using Components = ComponentsWrapper<U>;
 
     /**
      * @brief Standard read/write each function
@@ -92,7 +95,7 @@ template <typename T> class Components
      */
     template <typename P>
     [[nodiscard]] P derive(auto &&fn, P fallback, Transformation behavior = Transformation::DEFAULT)
-        requires(std::invocable<std::decay_t<decltype(fn)>, const T &> && !Tags::shouldStack<T>())
+        requires(std::invocable<std::decay_t<decltype(fn)>, const T &> && !Tags::Utils::shouldStack<T>())
     {
         static_assert(std::is_invocable_v<std::decay_t<decltype(fn)>, const T &>,
                       "Derive function must take const T& as argument.");
@@ -110,7 +113,7 @@ template <typename T> class Components
 
     template <typename P>
     [[nodiscard]] P derive(auto &&fn, Transformation behavior = Transformation::DEFAULT)
-        requires(std::invocable<std::decay_t<decltype(fn)>, const T &> && !Tags::shouldStack<T>())
+        requires(std::invocable<std::decay_t<decltype(fn)>, const T &> && !Tags::Utils::shouldStack<T>())
     {
         static_assert(std::is_invocable_v<std::decay_t<decltype(fn)>, const T &>,
                       "Derive function must take const T& as argument.");
@@ -139,12 +142,12 @@ template <typename T> class Components
      */
     template <typename Prop>
     [[nodiscard]] const Prop &peek(Transformation behavior, Prop T::*prop)
-        requires(!Tags::shouldStack<T>())
+        requires(!Tags::Utils::shouldStack<T>())
     {
-        static_assert(!Tags::shouldStack<T>(), "Cannot use peek method with a stacked component");
+        static_assert(!Tags::Utils::shouldStack<T>(), "Cannot use peek method with a stacked component");
 
-        ASSERT(!isEmpty(), "Property: " + getTypeName<decltype(prop)>() +
-                               " could not be peeked from Component: " + getTypeName<T>());
+        ASSERT(!isEmpty(), "Property: " + Utilities::getTypeName<decltype(prop)>() +
+                               " could not be peeked from Component: " + Utilities::getTypeName<T>());
 
         handleTransformations(behavior);
 
@@ -153,16 +156,16 @@ template <typename T> class Components
 
     template <typename Prop>
     [[nodiscard]] const Prop &peek(Prop T::*prop)
-        requires(!Tags::shouldStack<T>())
+        requires(!Tags::Utils::shouldStack<T>())
     {
         return peek(Transformation::DEFAULT, prop);
     }
 
     template <typename... Props>
     [[nodiscard]] auto peek(Transformation behavior, Props T::*...props)
-        requires(!Tags::shouldStack<T>())
+        requires(!Tags::Utils::shouldStack<T>())
     {
-        ASSERT(!isEmpty(), "One or more properties could not be peeked from Component: " + getTypeName<T>());
+        ASSERT(!isEmpty(), "One or more properties could not be peeked from Component: " + Utilities::getTypeName<T>());
 
         handleTransformations(behavior);
 
@@ -171,7 +174,7 @@ template <typename T> class Components
 
     template <typename... Props>
     [[nodiscard]] auto peek(Props T::*...props)
-        requires(!Tags::shouldStack<T>())
+        requires(!Tags::Utils::shouldStack<T>())
     {
         return peek(Transformation::DEFAULT, props...);
     }
@@ -462,7 +465,7 @@ template <typename T> class Components
     void printData()
     {
         auto arrangement = getArrangement();
-        auto arrangementType = getEnumString(arrangement);
+        auto arrangementType = Utilities::getEnumString(arrangement);
         PRINT("COMPONENT ARRANGEMENT:", arrangementType, " - SIZE:", size())
     }
 #endif
@@ -485,7 +488,7 @@ template <typename T> class Components
         case Arrangement::STACKED:
             return Iterator(components().begin(), Arrangement::STACKED);
         default:
-            throw std::runtime_error(std::string(getEnumString(getArrangement())) + " " + typeid(T).name() +
+            throw std::runtime_error(std::string(Utilities::getEnumString(getArrangement())) + " " + typeid(T).name() +
                                      " arrangement has no iterator!!");
         }
 
@@ -505,7 +508,7 @@ template <typename T> class Components
         case Arrangement::STACKED:
             return Iterator(components().end(), Arrangement::STACKED);
         default:
-            throw std::runtime_error(std::string(getEnumString(getArrangement())) + " " + typeid(T).name() +
+            throw std::runtime_error(std::string(Utilities::getEnumString(getArrangement())) + " " + typeid(T).name() +
                                      " arrangement has no iterator!!");
         }
 
@@ -519,7 +522,7 @@ template <typename T> class Components
 
     template <typename... Args> void emplace(Args... args)
     {
-        if (!Tags::shouldStack<T>())
+        if (!Tags::Utils::shouldStack<T>())
         {
             m_component.emplace(args...);
             return;
@@ -538,12 +541,11 @@ template <typename T> class Components
      * Be aware that this bypasses all safeguards in place when using the
      * regular approach to accessing components.
      */
-    [[nodiscard]] std::vector<T &> unpack()
+    [[nodiscard]] std::vector<T *> unpack()
     {
-        std::vector<T &> vec;
-
+        std::vector<T *> vec;
         for (auto &comp : *this)
-            vec.push_back(comp);
+            vec.push_back(&comp);
 
         return std::move(vec);
     }
@@ -612,7 +614,7 @@ template <typename T> class Components
         if (!isTransformer() || isTransformed())
             return false;
 
-        return (Tags::isTransform<T>() && behavior == Transformation::DEFAULT) ||
+        return (Tags::Utils::isTransform<T>() && behavior == Transformation::DEFAULT) ||
                behavior == Transformation::TRANSFORM;
     }
 
@@ -685,4 +687,5 @@ template <typename T> class Components
 
         return 0;
     }
+};
 };

@@ -5,6 +5,9 @@
 #include <optional>
 #include <ostream>
 
+namespace ECS {
+namespace Utilities {
+
 template <typename T> [[nodiscard]] std::string getTypeName()
 {
     return typeid(T).name();
@@ -110,3 +113,5 @@ template <typename Enum> [[nodiscard]] inline constexpr std::array<Enum, getEnum
 
 template <typename Func, typename... Args>
 concept ReturnsBool = std::is_invocable_r_v<bool, Func, Args...>;
+}
+}

@@ -1,4 +1,5 @@
 #include "core.hpp"
+#include "utilities.hpp"
 
 enum class Arrangement
 {
@@ -33,7 +34,7 @@ template <typename T> class ComponentIterator
             m_modifiedIter = _iter;
             break;
         default:
-            ECS_LOG_WARNING("Arrangement not found for", getTypeName<T>(), "!")
+            ECS_LOG_WARNING("Arrangement not found for", ECS::Utilities::getTypeName<T>(), "!")
         }
     }
     ComponentIterator(std::vector<T>::iterator _iter, Arrangement _arrangement)
@@ -49,7 +50,7 @@ template <typename T> class ComponentIterator
             m_componentsIter = _iter;
             break;
         default:
-            ECS_LOG_WARNING("Arrangement not found for", getTypeName<T>(), "!")
+            ECS_LOG_WARNING("Arrangement not found for", ECS::Utilities::getTypeName<T>(), "!")
         }
     }
     ComponentIterator(T *_component) : m_component(_component), isComponent(true)

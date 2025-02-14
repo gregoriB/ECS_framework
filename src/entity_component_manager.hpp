@@ -5,7 +5,8 @@
 #include "sparse_set.hpp"
 #include "tags.hpp"
 #include "utilities.hpp"
-#include <unordered_set>
+
+namespace ECS {
 
 template <typename EntityId, typename... Ts> class Grouping
 {
@@ -66,6 +67,7 @@ template <typename EntityId, typename... Ts> class Grouping
 template <typename EntityId> class EntityComponentManager
 {
   private:
+    template <typename T> using Components = ComponentsWrapper<T>;
     template <typename T> using ComponentSet = SparseSet<EntityId, Components<T>>;
     template <typename T> using ComponentSetMap = std::unordered_map<size_t, std::unique_ptr<T>>;
     template <typename... Ts> using ComponentSetGroup = Grouping<EntityId, ComponentSet<Ts>...>;
@@ -106,7 +108,7 @@ template <typename EntityId> class EntityComponentManager
         if (!eId)
             return;
 
-        if constexpr (Tags::isUnique<T>())
+        if constexpr (Tags::Utils::isUnique<T>())
         {
             addUnique<T>(eId, args...);
             return;
@@ -121,7 +123,7 @@ template <typename EntityId> class EntityComponentManager
             return;
 
         auto &cSet = getComponentSet<T>();
-        if constexpr (Tags::isUnique<T>())
+        if constexpr (Tags::Utils::isUnique<T>())
         {
             overwriteUnique<T>(eId, cSet, args...);
             return;
@@ -131,7 +133,7 @@ template <typename EntityId> class EntityComponentManager
     }
 
     /**
-     * @brief Get a specified component for the entity
+     * @brief Get specified components for the entity
      *
      * @param Entity Id
      *
@@ -143,36 +145,15 @@ template <typename EntityId> class EntityComponentManager
     }
 
     /**
-     * @brief Check whether or not the component set contains the entity id
+     * @brief Get a specified component for multiple entities
      *
-     * @param Entity Id
+     * @params Entity IDs
      *
-     * @return Bool - true if contains the entity
+     * @return Tuple of component references
      */
-    template <typename T> [[nodiscard]] bool contains(EntityId eId)
+    template <typename T, typename... Ids> [[nodiscard]] auto get(EntityId id, Ids... ids)
     {
-        auto cSetPtr = getComponentSetPtr<T>();
-        if (!cSetPtr)
-            return false;
-
-        if (!cSetPtr->get(eId))
-            return false;
-
-        return true;
-    }
-
-    /**
-     * @brief Check whether or not the component set exists
-     *
-     * @return Bool - true if component set exists
-     */
-    template <typename T> [[nodiscard]] bool exists()
-    {
-        auto cSetPtr = getComponentSetPtr<T>();
-        if (!cSetPtr || !(*cSetPtr))
-            return false;
-
-        return true;
+        return getComponentsHelper<T>(getComponentSet<T>(), id, ids...);
     }
 
     /**
@@ -182,10 +163,10 @@ template <typename EntityId> class EntityComponentManager
      */
     template <typename T>
     [[nodiscard]] std::pair<EntityId, Components<T> &> getUnique()
-        requires(Tags::isUnique<T>())
+        requires(Tags::Utils::isUnique<T>())
     {
         auto &cSet = getComponentSet<T>();
-        ASSERT(Tags::isUnique<T>(), getTypeName<T>() + " is not a unique component!");
+        ASSERT(Tags::Utils::isUnique<T>(), Utilities::getTypeName<T>() + " is not a unique component!");
 
         EntityId id{0};
         Components<T> *compsPtr;
@@ -206,18 +187,6 @@ template <typename EntityId> class EntityComponentManager
         // If the set is empty, create a dummy component for a fake entity
         std::tuple<Components<T> &> compsTuple = get<T>(0);
         return {0, std::get<0>(compsTuple)};
-    }
-
-    /**
-     * @brief Get a specified component for multiple entities
-     *
-     * @params Entity IDs
-     *
-     * @return Tuple of component references
-     */
-    template <typename T, typename... Ids> [[nodiscard]] auto get(EntityId id, Ids... ids)
-    {
-        return getComponentsHelper<T>(getComponentSet<T>(), id, ids...);
     }
 
     template <typename T, typename... Ts> [[nodiscard]] const std::vector<EntityId> getEntityIds()
@@ -294,6 +263,40 @@ template <typename EntityId> class EntityComponentManager
     template <typename... Ts> [[nodiscard]] std::tuple<ComponentSet<Ts> &...> getAll()
     {
         return {getComponentSet<Ts>(m_minSetSize)...};
+    }
+
+    /**
+     * @brief Check whether or not the component set contains the entity id
+     *
+     * @param Entity Id
+     *
+     * @return Bool - true if contains the entity
+     */
+    template <typename T> [[nodiscard]] bool contains(EntityId eId)
+    {
+        auto cSetPtr = getComponentSetPtr<T>();
+        if (!cSetPtr)
+            return false;
+
+        auto compsPtr = cSetPtr->get(eId);
+        if (!compsPtr || !(*compsPtr))
+            return false;
+
+        return true;
+    }
+
+    /**
+     * @brief Check whether or not the component set exists
+     *
+     * @return Bool - true if component set exists
+     */
+    template <typename T> [[nodiscard]] bool exists()
+    {
+        auto cSetPtr = getComponentSetPtr<T>();
+        if (!cSetPtr || !(*cSetPtr))
+            return false;
+
+        return true;
     }
 
     /**
@@ -394,8 +397,8 @@ template <typename EntityId> class EntityComponentManager
         auto [uniqueId, _] = getUnique<T>();
 
         ASSERT(eId == uniqueId, "Enitty ID: " + std::to_string(eId) +
-                                    " is not owning entity for unique component: " + getTypeName<T>())
-        ASSERT(Tags::isUnique<T>(), getTypeName<T>() + " is not unique!")
+                                    " is not owning entity for unique component: " + Utilities::getTypeName<T>())
+        ASSERT(Tags::Utils::isUnique<T>(), Utilities::getTypeName<T>() + " is not unique!")
 
         overwriteComponent<T>(eId, cSet, args...);
     }
@@ -403,16 +406,16 @@ template <typename EntityId> class EntityComponentManager
 #ifdef ecs_allow_debug
     template <typename Component> void debugCheckRequired(std::string operation)
     {
-        if (!Tags::isRequired<Component>())
+        if (!Tags::Utils::isRequired<Component>())
             return;
 
         ECS_LOG_WARNING(operation,
-                        "operation performed on a required component: " + getTypeName<Component>() + "!");
+                        "operation performed on a required component: " + Utilities::getTypeName<Component>() + "!");
     }
 
     template <typename T> void debugCheckForConflictingTags()
     {
-        static_assert(!(Tags::isStacked<T>() && Tags::isNotStacked<T>()), "Conflicting tags detected!");
+        static_assert(!(Tags::Utils::isStacked<T>() && Tags::Utils::isNotStacked<T>()), "Conflicting tags detected!");
     }
 #endif
 
@@ -479,7 +482,7 @@ template <typename EntityId> class EntityComponentManager
     {
         auto &cSet = getComponentSet<T>();
         if (!cSet)
-            ASSERT(!Tags::isRequired<T>(), getTypeName<T>() + " is a required component!")
+            ASSERT(!Tags::Utils::isRequired<T>(), Utilities::getTypeName<T>() + " is a required component!")
 
         return getOrCreateComponent<T>(cSet, eId);
     }
@@ -512,7 +515,7 @@ template <typename EntityId> class EntityComponentManager
     template <typename T, typename... Args> void addComponent(EntityId eId, Args... args)
     {
         ComponentSet<T> &cSet = getComponentSet<T>();
-        ASSERT(!cSet.isLocked(), "Attempt to add to a locked component set for " + getTypeName<T>())
+        ASSERT(!cSet.isLocked(), "Attempt to add to a locked component set for " + Utilities::getTypeName<T>())
 
         auto comps = cSet.get(eId);
         if (!comps)
@@ -525,9 +528,9 @@ template <typename EntityId> class EntityComponentManager
             return;
         }
 
-        if (!Tags::shouldStack<T>() && comps->size() >= 1)
+        if (!Tags::Utils::shouldStack<T>() && comps->size() >= 1)
         {
-            ECS_LOG_WARNING(eId, "Already contains a NoStack-tagged ", getTypeName<T>(), "Add failed!");
+            ECS_LOG_WARNING(eId, "Already contains a NoStack-tagged ", Utilities::getTypeName<T>(), "Add failed!");
 
             return;
         }
@@ -542,7 +545,7 @@ template <typename EntityId> class EntityComponentManager
         auto comps = cSet.get(eId);
         if (!comps)
         {
-            ECS_LOG_WARNING(eId, "does not contain", getTypeName<T>(), "Overwrite failed!");
+            ECS_LOG_WARNING(eId, "does not contain", Utilities::getTypeName<T>(), "Overwrite failed!");
             return;
         }
 
@@ -641,13 +644,13 @@ template <typename EntityId> class EntityComponentManager
     template <typename T> const std::array<size_t, 7> getTagHashes() const
     {
         return {
-            Tags::isEvent<T>() ? typeid(Tags::Event).hash_code() : 0,
-            Tags::isEffect<T>() ? typeid(Tags::Effect).hash_code() : 0,
-            Tags::isNotStacked<T>() ? typeid(Tags::NoStack).hash_code() : 0,
-            Tags::isStacked<T>() ? typeid(Tags::Stack).hash_code() : 0,
-            Tags::isTransform<T>() ? typeid(Tags::Transform).hash_code() : 0,
-            Tags::isRequired<T>() ? typeid(Tags::Required).hash_code() : 0,
-            Tags::isUnique<T>() ? typeid(Tags::Unique).hash_code() : 0,
+            Tags::Utils::isEvent<T>() ? typeid(Tags::Event).hash_code() : 0,
+            Tags::Utils::isEffect<T>() ? typeid(Tags::Effect).hash_code() : 0,
+            Tags::Utils::isNotStacked<T>() ? typeid(Tags::NoStack).hash_code() : 0,
+            Tags::Utils::isStacked<T>() ? typeid(Tags::Stack).hash_code() : 0,
+            Tags::Utils::isTransform<T>() ? typeid(Tags::Transform).hash_code() : 0,
+            Tags::Utils::isRequired<T>() ? typeid(Tags::Required).hash_code() : 0,
+            Tags::Utils::isUnique<T>() ? typeid(Tags::Unique).hash_code() : 0,
         };
     }
 
@@ -657,7 +660,7 @@ template <typename EntityId> class EntityComponentManager
         return *static_cast<ComponentSet<T> *>(&getSetFromIterator(iter));
 #else
         auto casted = dynamic_cast<ComponentSet<T> *>(&getSetFromIterator(iter));
-        ASSERT(casted, getTypeName<T>() + " Failed dynamic_cast!")
+        ASSERT(casted, Utilities::getTypeName<T>() + " Failed dynamic_cast!")
 
         return *casted;
 #endif
@@ -798,4 +801,5 @@ template <typename EntityId> class EntityComponentManager
     {
         return {getComponentSetPtr<Ts>()...};
     }
+};
 };

@@ -1,4 +1,4 @@
-main
-/build
-.cache/ 
+build
+.cache
 compile_commands.json
+

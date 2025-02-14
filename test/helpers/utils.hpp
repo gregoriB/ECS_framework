@@ -1,13 +1,18 @@
 #pragma once
 
-#include "../../example/invaders/core.hpp"
-#include <cassert>
+#include "../core.hpp"
 
-inline std::function<void(Tags::Effect &)> markForCleanup = [](Tags::Effect &effect) {
+inline std::function<void(Effect &)> markForCleanup = [](Effect &effect) {
     effect.cleanup = true;
 };
 
-inline std::function<bool(const Tags::Effect &)> isEffectExpired = [](const Tags::Effect &effect) {
+inline std::function<bool(const Effect &)> isEffectExpired = [](const Effect &effect) {
+using Effect = ECS::Tags::Effect;
+using Stack = ECS::Tags::Stack;
+using NoStack = ECS::Tags::NoStack;
+using Event = ECS::Tags::Event;
+using Transform = ECS::Tags::Transform;
+
     if (effect.cleanup)
         return true;
 

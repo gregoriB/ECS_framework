@@ -1,10 +1,7 @@
 #pragma once
 
-#include "../../example/invaders/core.hpp"
 #include "../helpers/components.hpp"
 #include "../helpers/utils.hpp"
-#include <cassert>
-#include <cstdint>
 
 inline constexpr int COUNT_2K = 2000;
 inline constexpr int COUNT_65K = 65000;
@@ -12,6 +9,8 @@ inline constexpr int COUNT_100K = 100000;
 inline constexpr int COUNT_200K = 200000;
 inline constexpr int COUNT_1M = 1000000;
 inline constexpr int COUNT_2M = 2000000;
+
+using Timer = ECS::Timer;
 
 inline void setupBenchmark(ECM &ecm, int entityCount)
 {

@@ -1,11 +1,9 @@
 #pragma once
 
-#include "../../example/invaders/core.hpp"
-#include <string>
+#include "../core.hpp"
 
-struct TestEffectCompTimed : Tags::Effect, Tags::Stack
+struct TestEffectCompTimed : Effect, Stack
 {
-    Vector2 vec2{};
     int value{};
 
     TestEffectCompTimed(float duration) : Effect(duration)
@@ -21,9 +19,8 @@ struct TestEffectCompTimed : Tags::Effect, Tags::Stack
     }
 };
 
-struct TestEffectComp : Tags::Effect, Tags::Stack
+struct TestEffectComp : Effect, Stack
 {
-    Vector2 vec2{};
     int value{};
 
     TestEffectComp()
@@ -34,9 +31,8 @@ struct TestEffectComp : Tags::Effect, Tags::Stack
     }
 };
 
-struct TestStackedComp : Tags::Stack
+struct TestStackedComp : Stack
 {
-    Vector2 vec2{};
     int val{};
     std::string message{"this is a stacked component"};
 
@@ -48,10 +44,9 @@ struct TestStackedComp : Tags::Stack
     }
 };
 
-struct TestNonStackedComp : public Tags::NoStack
+struct TestNonStackedComp : public NoStack
 {
     int val{};
-    Vector2 vec2{};
     std::string message{"this is a non-stacked component"};
 
     TestNonStackedComp()
@@ -62,15 +57,13 @@ struct TestNonStackedComp : public Tags::NoStack
     }
 };
 
-struct TestTransformComp : public Tags::Transform
+struct TestTransformComp : public Transform
 {
-    Vector2 vec2{};
     std::string message{"this is a transform component"};
 };
 
-struct TestEventComp : public Tags::Event
+struct TestEventComp : public Event
 {
-    Vector2 vec2{};
     std::string message{"this is an event component"};
 };
 

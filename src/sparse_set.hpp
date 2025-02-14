@@ -1,12 +1,14 @@
 #pragma once
 
+#include "base_sparse_set.hpp"
 #include "components.hpp"
 #include "core.hpp"
 #include "utilities.hpp"
-#include "base_sparse_set.hpp"
 
-namespace ECS {
-template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, ComponentsWrapper<DefaultComponent>>
+namespace ECS
+{
+template <typename Id, typename T>
+class SparseSet : public BaseSparseSet<Id, ComponentsWrapper<DefaultComponent>>
 {
   public:
     template <typename EntityId> friend class EntityComponentManager;
@@ -274,4 +276,4 @@ template <typename Id, typename T> class SparseSet : public BaseSparseSet<Id, Co
         return m_ids.size();
     }
 };
-};
+}; // namespace ECS

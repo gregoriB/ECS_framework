@@ -5,7 +5,8 @@
 #include "tags.hpp"
 #include "utilities.hpp"
 
-namespace ECS {
+namespace ECS
+{
 
 enum class Transformation
 {
@@ -165,7 +166,8 @@ template <typename T> class ComponentsWrapper
     [[nodiscard]] auto peek(Transformation behavior, Props T::*...props)
         requires(!Tags::Utils::shouldStack<T>())
     {
-        ASSERT(!isEmpty(), "One or more properties could not be peeked from Component: " + Utilities::getTypeName<T>());
+        ASSERT(!isEmpty(),
+               "One or more properties could not be peeked from Component: " + Utilities::getTypeName<T>());
 
         handleTransformations(behavior);
 
@@ -488,8 +490,8 @@ template <typename T> class ComponentsWrapper
         case Arrangement::STACKED:
             return Iterator(components().begin(), Arrangement::STACKED);
         default:
-            throw std::runtime_error(std::string(Utilities::getEnumString(getArrangement())) + " " + typeid(T).name() +
-                                     " arrangement has no iterator!!");
+            throw std::runtime_error(std::string(Utilities::getEnumString(getArrangement())) + " " +
+                                     typeid(T).name() + " arrangement has no iterator!!");
         }
 
         return Iterator(nullptr);
@@ -508,8 +510,8 @@ template <typename T> class ComponentsWrapper
         case Arrangement::STACKED:
             return Iterator(components().end(), Arrangement::STACKED);
         default:
-            throw std::runtime_error(std::string(Utilities::getEnumString(getArrangement())) + " " + typeid(T).name() +
-                                     " arrangement has no iterator!!");
+            throw std::runtime_error(std::string(Utilities::getEnumString(getArrangement())) + " " +
+                                     typeid(T).name() + " arrangement has no iterator!!");
         }
 
         return Iterator(nullptr);
@@ -688,4 +690,4 @@ template <typename T> class ComponentsWrapper
         return 0;
     }
 };
-};
+}; // namespace ECS

@@ -335,8 +335,8 @@ inline void test_clear_all_by_entity(ECM &ecm)
     ecm.add<TestStackedComp>(id3);
     ecm.add<TestNonStackedComp>(id3);
 
-    auto [testEventCompSet, testEffectCompSet, testStackedCompSet, testNonStackCompSet] = ecm.getAll<
-        TestEventComp, TestEffectComp, TestStackedComp, TestNonStackedComp>();
+    auto [testEventCompSet, testEffectCompSet, testStackedCompSet, testNonStackCompSet] =
+        ecm.getAll<TestEventComp, TestEffectComp, TestStackedComp, TestNonStackedComp>();
     assert(testEventCompSet.size() == 3);
     assert(testEffectCompSet.size() == 3);
     assert(testStackedCompSet.size() == 3);
@@ -385,7 +385,8 @@ inline void test_prune_multi(ECM &ecm)
     ecm.add<TestNonStackedComp>(id, 1);
     ecm.add<TestStackedComp>(id, 1);
 
-    auto [effectComps, nonstackComps, stackedComps] = ecm.get<TestEffectComp, TestNonStackedComp, TestStackedComp>(id);
+    auto [effectComps, nonstackComps, stackedComps] =
+        ecm.get<TestEffectComp, TestNonStackedComp, TestStackedComp>(id);
     effectComps.remove([&](const TestEffectComp &testComp) { return true; });
     nonstackComps.remove([&](const TestNonStackedComp &testComp) { return true; });
     stackedComps.remove([&](const TestStackedComp &testComp) { return true; });
@@ -496,7 +497,8 @@ inline void test_prune_by_tag(ECM &ecm)
 
     auto [untimedEffectSet, timedEffectSet] = ecm.getAll<TestEffectComp, TestEffectCompTimed>();
     auto [testEffectComp1, testEffectComp2] = ecm.get<TestEffectComp>(id1, id2);
-    auto [testEffectCompTimed3, testEffectCompTimed4, testEffectCompTimed5] = ecm.get<TestEffectComp>(id3, id4, id5);
+    auto [testEffectCompTimed3, testEffectCompTimed4, testEffectCompTimed5] =
+        ecm.get<TestEffectComp>(id3, id4, id5);
 
     assert(untimedEffectSet.size() == 2);
     assert(timedEffectSet.size() == 3);

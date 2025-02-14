@@ -5,7 +5,8 @@
 
 constexpr bool defaultComponentStacking = false;
 
-namespace ECS {
+namespace ECS
+{
 namespace Tags
 {
 
@@ -42,7 +43,8 @@ struct Effect
     }
 };
 
-namespace Utils {
+namespace Utils
+{
 template <typename T, typename Base> [[nodiscard]] constexpr bool isBase()
 {
     return Utilities::isBase<T, Base>();
@@ -102,6 +104,6 @@ template <typename T> constexpr bool shouldStack()
     return shouldDefaultToStack();
 }
 
-}
-}
+} // namespace Utils
 } // namespace Tags
+} // namespace ECS

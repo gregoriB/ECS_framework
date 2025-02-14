@@ -36,11 +36,13 @@ inline void test_get_optional_enum_string(ECM &ecm)
 {
     PRINT("TEST ENUM GET STRING CONVERTER")
 
-    constexpr std::optional<std::string_view> withValue = ECS::Utilities::getOptionalEnumString(TestEnum::ONE);
+    constexpr std::optional<std::string_view> withValue =
+        ECS::Utilities::getOptionalEnumString(TestEnum::ONE);
 
     static_assert(withValue.has_value());
 
-    constexpr std::optional<std::string_view> withoutValue = ECS::Utilities::getOptionalEnumString(static_cast<TestEnum>(3));
+    constexpr std::optional<std::string_view> withoutValue =
+        ECS::Utilities::getOptionalEnumString(static_cast<TestEnum>(3));
 
     static_assert(!withoutValue.has_value());
 }

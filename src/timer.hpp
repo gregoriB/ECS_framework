@@ -2,7 +2,8 @@
 
 #include <chrono>
 
-namespace ECS {
+namespace ECS
+{
 class Timer
 {
   public:
@@ -59,4 +60,4 @@ class Timer
     std::chrono::steady_clock::time_point startTime;
     std::chrono::steady_clock::time_point stopTime;
 };
-}
+} // namespace ECS

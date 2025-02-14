@@ -11,16 +11,16 @@
 #include <iostream>
 #include <memory>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <sys/types.h>
+#include <type_traits>
 #include <typeindex>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
-#include <stdexcept>
-#include <type_traits>
 
 template <typename... Args> constexpr void print(const Args &...args)
 {
@@ -75,7 +75,6 @@ inline void _assert(bool condition, std::string m)
 #else
 #define PRINT_BENCHMARKS(...) ;
 #endif
-
 
 template <typename T> using Transformer = std::function<T(T &)>;
 

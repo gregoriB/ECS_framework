@@ -28,4 +28,3 @@ template <typename Id, typename T> class BaseSparseSet
     {
     }
 };
-

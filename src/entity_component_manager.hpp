@@ -6,7 +6,8 @@
 #include "tags.hpp"
 #include "utilities.hpp"
 
-namespace ECS {
+namespace ECS
+{
 
 template <typename EntityId, typename... Ts> class Grouping
 {
@@ -396,8 +397,9 @@ template <typename EntityId> class EntityComponentManager
     {
         auto [uniqueId, _] = getUnique<T>();
 
-        ASSERT(eId == uniqueId, "Enitty ID: " + std::to_string(eId) +
-                                    " is not owning entity for unique component: " + Utilities::getTypeName<T>())
+        ASSERT(eId == uniqueId,
+               "Enitty ID: " + std::to_string(eId) +
+                   " is not owning entity for unique component: " + Utilities::getTypeName<T>())
         ASSERT(Tags::Utils::isUnique<T>(), Utilities::getTypeName<T>() + " is not unique!")
 
         overwriteComponent<T>(eId, cSet, args...);
@@ -409,13 +411,14 @@ template <typename EntityId> class EntityComponentManager
         if (!Tags::Utils::isRequired<Component>())
             return;
 
-        ECS_LOG_WARNING(operation,
-                        "operation performed on a required component: " + Utilities::getTypeName<Component>() + "!");
+        ECS_LOG_WARNING(operation, "operation performed on a required component: " +
+                                       Utilities::getTypeName<Component>() + "!");
     }
 
     template <typename T> void debugCheckForConflictingTags()
     {
-        static_assert(!(Tags::Utils::isStacked<T>() && Tags::Utils::isNotStacked<T>()), "Conflicting tags detected!");
+        static_assert(!(Tags::Utils::isStacked<T>() && Tags::Utils::isNotStacked<T>()),
+                      "Conflicting tags detected!");
     }
 #endif
 
@@ -515,7 +518,8 @@ template <typename EntityId> class EntityComponentManager
     template <typename T, typename... Args> void addComponent(EntityId eId, Args... args)
     {
         ComponentSet<T> &cSet = getComponentSet<T>();
-        ASSERT(!cSet.isLocked(), "Attempt to add to a locked component set for " + Utilities::getTypeName<T>())
+        ASSERT(!cSet.isLocked(),
+               "Attempt to add to a locked component set for " + Utilities::getTypeName<T>())
 
         auto comps = cSet.get(eId);
         if (!comps)
@@ -530,7 +534,8 @@ template <typename EntityId> class EntityComponentManager
 
         if (!Tags::Utils::shouldStack<T>() && comps->size() >= 1)
         {
-            ECS_LOG_WARNING(eId, "Already contains a NoStack-tagged ", Utilities::getTypeName<T>(), "Add failed!");
+            ECS_LOG_WARNING(eId, "Already contains a NoStack-tagged ", Utilities::getTypeName<T>(),
+                            "Add failed!");
 
             return;
         }
@@ -802,4 +807,4 @@ template <typename EntityId> class EntityComponentManager
         return {getComponentSetPtr<Ts>()...};
     }
 };
-};
+}; // namespace ECS

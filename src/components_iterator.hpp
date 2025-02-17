@@ -1,4 +1,5 @@
 #include "core.hpp"
+#include "macros.hpp"
 #include "utilities.hpp"
 
 enum class Arrangement
@@ -59,8 +60,8 @@ template <typename T> class ComponentIterator
 
     [[nodiscard]] T &operator*()
     {
-        assert((isModified + isTransformed + isComponents + isComponent) == 1 &&
-               "Iterator has conflicting modes!");
+        ECS_ASSERT((isModified + isTransformed + isComponents + isComponent) == 1,
+                   "Iterator has conflicting modes!")
 
         if (isComponent)
             return *m_component;
@@ -77,8 +78,8 @@ template <typename T> class ComponentIterator
 
     ComponentIterator &operator++()
     {
-        assert((isModified + isTransformed + isComponents + isComponent) == 1 &&
-               "Iterator has conflicting modes!");
+        ECS_ASSERT((isModified + isTransformed + isComponents + isComponent) == 1,
+                   "Iterator has conflicting modes!")
 
         if (isComponent)
             m_component = nullptr;
@@ -94,8 +95,8 @@ template <typename T> class ComponentIterator
 
     bool operator==(const ComponentIterator &other) const
     {
-        assert((isModified + isTransformed + isComponents + isComponent) == 1 &&
-               "Iterator has conflicting modes!");
+        ECS_ASSERT((isModified + isTransformed + isComponents + isComponent) == 1,
+                   "Iterator has conflicting modes!")
 
         if (isComponent)
             return m_component == other.m_component;

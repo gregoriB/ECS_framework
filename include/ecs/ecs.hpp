@@ -15,3 +15,6 @@ template <typename EntityId, typename T> using Group = internal::Grouping<Entity
 
 template <typename T> using Components = internal::ComponentsWrapper<T>;
 } // namespace ECS
+
+#undef ECS_LOG_WARNING
+#undef ECS_ASSERT

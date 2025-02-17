@@ -16,3 +16,5 @@ using Stack = ECS::Tags::Stack;
 using NoStack = ECS::Tags::NoStack;
 using Event = ECS::Tags::Event;
 using Transform = ECS::Tags::Transform;
+
+#define PRINT(...) ECS::internal::Utilities::print(__VA_ARGS__);

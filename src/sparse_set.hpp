@@ -3,6 +3,7 @@
 #include "base_sparse_set.hpp"
 #include "components.hpp"
 #include "core.hpp"
+#include "macros.hpp"
 #include "utilities.hpp"
 
 namespace ECS

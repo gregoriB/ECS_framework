@@ -2,6 +2,7 @@
 
 #include "components_iterator.hpp"
 #include "core.hpp"
+#include "macros.hpp"
 #include "tags.hpp"
 #include "utilities.hpp"
 
@@ -9,6 +10,12 @@ namespace ECS
 {
 namespace internal
 {
+
+template <typename T> using Transformer = std::function<T(T &)>;
+
+struct DefaultComponent
+{
+};
 
 enum class Transformation
 {
@@ -149,8 +156,8 @@ template <typename T> class ComponentsWrapper
     {
         static_assert(!Tags::Utils::shouldStack<T>(), "Cannot use peek method with a stacked component");
 
-        ASSERT(!isEmpty(), "Property: " + Utilities::getTypeName<decltype(prop)>() +
-                               " could not be peeked from Component: " + Utilities::getTypeName<T>());
+        ECS_ASSERT(!isEmpty(), "Property: " + Utilities::getTypeName<decltype(prop)>() +
+                                   " could not be peeked from Component: " + Utilities::getTypeName<T>());
 
         handleTransformations(behavior);
 
@@ -168,8 +175,8 @@ template <typename T> class ComponentsWrapper
     [[nodiscard]] auto peek(Transformation behavior, Props T::*...props)
         requires(!Tags::Utils::shouldStack<T>())
     {
-        ASSERT(!isEmpty(),
-               "One or more properties could not be peeked from Component: " + Utilities::getTypeName<T>());
+        ECS_ASSERT(!isEmpty(), "One or more properties could not be peeked from Component: " +
+                                   Utilities::getTypeName<T>());
 
         handleTransformations(behavior);
 
@@ -470,7 +477,7 @@ template <typename T> class ComponentsWrapper
     {
         auto arrangement = getArrangement();
         auto arrangementType = Utilities::getEnumString(arrangement);
-        PRINT("COMPONENT ARRANGEMENT:", arrangementType, " - SIZE:", size())
+        ECS::internal::Utilities::print("COMPONENT ARRANGEMENT:", arrangementType, " - SIZE:", size());
     }
 #endif
 

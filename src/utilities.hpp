@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <cmath>
 #include <iostream>
 #include <optional>
@@ -117,6 +118,35 @@ template <typename Enum> [[nodiscard]] inline constexpr std::array<Enum, getEnum
 
 template <typename Func, typename... Args>
 concept ReturnsBool = std::is_invocable_r_v<bool, Func, Args...>;
+
+template <typename... Args> constexpr void print(const Args &...args)
+{
+    std::cout << "\n  ";
+    ((std::cout << " " << args), ...);
+    std::cout << '\n';
+};
+
+template <typename... Args> constexpr void debugWarningPrint(const Args &...args)
+{
+    std::cout << "\n ================= ECS ENGINE DEBUG LOG ===================\n";
+    print(args..., '\n');
+};
+
+template <typename... Args> constexpr void benchmarkPrint(const Args &...args)
+{
+    std::cout << "\n ================= ECS BENCHMARK LOG ===================\n";
+    print(args..., '\n');
+};
+
+inline void _assert(bool condition, std::string m)
+{
+    if (!condition)
+    {
+        bool SEE_ABOVE_MESSAGE = false;
+        print("!!!!!!!!!    ASSERTION FAILED: ", m, "   !!!!!!!!!");
+        assert(SEE_ABOVE_MESSAGE);
+    }
+}
 } // namespace Utilities
 } // namespace internal
 } // namespace ECS

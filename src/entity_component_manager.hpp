@@ -2,6 +2,7 @@
 
 #include "components.hpp"
 #include "core.hpp"
+#include "macros.hpp"
 #include "sparse_set.hpp"
 #include "tags.hpp"
 #include "utilities.hpp"
@@ -86,10 +87,11 @@ template <typename EntityId> class EntityComponentManager
     using StoredTransformationFnMap = std::unordered_map<size_t, StoredTransformationFn>;
 
   public:
-    EntityComponentManager(size_t minSetSize = 100, size_t setSize = 10024)
+    EntityComponentManager(size_t minSetSize = 100, size_t setSize = 10024, EntityId reservedEntities = 10)
     {
         m_minSetSize = minSetSize;
         m_standardSetSize = setSize;
+        m_reservedEntities = reservedEntities;
     }
 
     EntityId createEntity()
@@ -169,7 +171,7 @@ template <typename EntityId> class EntityComponentManager
         requires(Tags::Utils::isUnique<T>())
     {
         auto &cSet = getComponentSet<T>();
-        ASSERT(Tags::Utils::isUnique<T>(), Utilities::getTypeName<T>() + " is not a unique component!");
+        ECS_ASSERT(Tags::Utils::isUnique<T>(), Utilities::getTypeName<T>() + " is not a unique component!");
 
         EntityId id{0};
         Components<T> *compsPtr;
@@ -399,10 +401,10 @@ template <typename EntityId> class EntityComponentManager
     {
         auto [uniqueId, _] = getUnique<T>();
 
-        ASSERT(eId == uniqueId,
-               "Enitty ID: " + std::to_string(eId) +
-                   " is not owning entity for unique component: " + Utilities::getTypeName<T>())
-        ASSERT(Tags::Utils::isUnique<T>(), Utilities::getTypeName<T>() + " is not unique!")
+        ECS_ASSERT(eId == uniqueId,
+                   "Enitty ID: " + std::to_string(eId) +
+                       " is not owning entity for unique component: " + Utilities::getTypeName<T>())
+        ECS_ASSERT(Tags::Utils::isUnique<T>(), Utilities::getTypeName<T>() + " is not unique!")
 
         overwriteComponent<T>(eId, cSet, args...);
     }
@@ -487,7 +489,8 @@ template <typename EntityId> class EntityComponentManager
     {
         auto &cSet = getComponentSet<T>();
         if (!cSet)
-            ASSERT(!Tags::Utils::isRequired<T>(), Utilities::getTypeName<T>() + " is a required component!")
+            ECS_ASSERT(!Tags::Utils::isRequired<T>(),
+                       Utilities::getTypeName<T>() + " is a required component!")
 
         return getOrCreateComponent<T>(cSet, eId);
     }
@@ -520,8 +523,8 @@ template <typename EntityId> class EntityComponentManager
     template <typename T, typename... Args> void addComponent(EntityId eId, Args... args)
     {
         ComponentSet<T> &cSet = getComponentSet<T>();
-        ASSERT(!cSet.isLocked(),
-               "Attempt to add to a locked component set for " + Utilities::getTypeName<T>())
+        ECS_ASSERT(!cSet.isLocked(),
+                   "Attempt to add to a locked component set for " + Utilities::getTypeName<T>())
 
         auto comps = cSet.get(eId);
         if (!comps)
@@ -667,7 +670,7 @@ template <typename EntityId> class EntityComponentManager
         return *static_cast<ComponentSet<T> *>(&getSetFromIterator(iter));
 #else
         auto casted = dynamic_cast<ComponentSet<T> *>(&getSetFromIterator(iter));
-        ASSERT(casted, Utilities::getTypeName<T>() + " Failed dynamic_cast!")
+        ECS_ASSERT(casted, Utilities::getTypeName<T>() + " Failed dynamic_cast!")
 
         return *casted;
 #endif
@@ -710,10 +713,11 @@ template <typename EntityId> class EntityComponentManager
     StoredComponents m_componentMap{};
     StoredTags m_tagMap{};
     StoredTransformationFnMap m_transformationMap{};
-    EntityId m_nextEntityId{static_cast<EntityId>(reservedEntities)};
+    EntityId m_nextEntityId{static_cast<EntityId>(m_reservedEntities)};
 
     size_t m_standardSetSize = 10024;
     size_t m_minSetSize = 100;
+    int m_reservedEntities{10};
 
 #ifdef ecs_allow_experimental
   public:

@@ -87,11 +87,11 @@ template <typename EntityId> class EntityComponentManager
     using StoredTransformationFnMap = std::unordered_map<size_t, StoredTransformationFn>;
 
   public:
-    EntityComponentManager(size_t minSetSize = 100, size_t setSize = 10024, EntityId reservedEntities = 10)
+    EntityComponentManager(EntityId reservedEntities = 10, size_t minSetSize = 100, size_t setSize = 10024)
     {
+        m_nextEntityId = static_cast<EntityId>(reservedEntities);
         m_minSetSize = minSetSize;
         m_standardSetSize = setSize;
-        m_reservedEntities = reservedEntities;
     }
 
     EntityId createEntity()
@@ -712,11 +712,10 @@ template <typename EntityId> class EntityComponentManager
     StoredComponents m_componentMap{};
     StoredTags m_tagMap{};
     StoredTransformationFnMap m_transformationMap{};
-    EntityId m_nextEntityId{static_cast<EntityId>(m_reservedEntities)};
+    EntityId m_nextEntityId{0};
 
     size_t m_standardSetSize = 10024;
     size_t m_minSetSize = 100;
-    int m_reservedEntities{10};
 
 #ifdef ecs_allow_experimental
   public:

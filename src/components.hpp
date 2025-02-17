@@ -105,7 +105,7 @@ template <typename T> class ComponentsWrapper
      */
     template <typename P>
     [[nodiscard]] P derive(auto &&fn, P fallback, Transformation behavior = Transformation::DEFAULT)
-        requires(std::invocable<std::decay_t<decltype(fn)>, const T &> && !Tags::Utils::shouldStack<T>())
+        requires(std::invocable<std::decay_t<decltype(fn)>, const T &> && !Utilities::shouldStack<T>())
     {
         static_assert(std::is_invocable_v<std::decay_t<decltype(fn)>, const T &>,
                       "Derive function must take const T& as argument.");
@@ -123,7 +123,7 @@ template <typename T> class ComponentsWrapper
 
     template <typename P>
     [[nodiscard]] P derive(auto &&fn, Transformation behavior = Transformation::DEFAULT)
-        requires(std::invocable<std::decay_t<decltype(fn)>, const T &> && !Tags::Utils::shouldStack<T>())
+        requires(std::invocable<std::decay_t<decltype(fn)>, const T &> && !Utilities::shouldStack<T>())
     {
         static_assert(std::is_invocable_v<std::decay_t<decltype(fn)>, const T &>,
                       "Derive function must take const T& as argument.");
@@ -152,9 +152,9 @@ template <typename T> class ComponentsWrapper
      */
     template <typename Prop>
     [[nodiscard]] const Prop &peek(Transformation behavior, Prop T::*prop)
-        requires(!Tags::Utils::shouldStack<T>())
+        requires(!Utilities::shouldStack<T>())
     {
-        static_assert(!Tags::Utils::shouldStack<T>(), "Cannot use peek method with a stacked component");
+        static_assert(!Utilities::shouldStack<T>(), "Cannot use peek method with a stacked component");
 
         ECS_ASSERT(!isEmpty(), "Property: " + Utilities::getTypeName<decltype(prop)>() +
                                    " could not be peeked from Component: " + Utilities::getTypeName<T>());
@@ -166,14 +166,14 @@ template <typename T> class ComponentsWrapper
 
     template <typename Prop>
     [[nodiscard]] const Prop &peek(Prop T::*prop)
-        requires(!Tags::Utils::shouldStack<T>())
+        requires(!Utilities::shouldStack<T>())
     {
         return peek(Transformation::DEFAULT, prop);
     }
 
     template <typename... Props>
     [[nodiscard]] auto peek(Transformation behavior, Props T::*...props)
-        requires(!Tags::Utils::shouldStack<T>())
+        requires(!Utilities::shouldStack<T>())
     {
         ECS_ASSERT(!isEmpty(), "One or more properties could not be peeked from Component: " +
                                    Utilities::getTypeName<T>());
@@ -185,7 +185,7 @@ template <typename T> class ComponentsWrapper
 
     template <typename... Props>
     [[nodiscard]] auto peek(Props T::*...props)
-        requires(!Tags::Utils::shouldStack<T>())
+        requires(!Utilities::shouldStack<T>())
     {
         return peek(Transformation::DEFAULT, props...);
     }
@@ -477,7 +477,7 @@ template <typename T> class ComponentsWrapper
     {
         auto arrangement = getArrangement();
         auto arrangementType = Utilities::getEnumString(arrangement);
-        ECS::internal::Utilities::print("COMPONENT ARRANGEMENT:", arrangementType, " - SIZE:", size());
+        Utilities::print("COMPONENT ARRANGEMENT:", arrangementType, " - SIZE:", size());
     }
 #endif
 
@@ -533,7 +533,7 @@ template <typename T> class ComponentsWrapper
 
     template <typename... Args> void emplace(Args... args)
     {
-        if (!Tags::Utils::shouldStack<T>())
+        if (!Utilities::shouldStack<T>())
         {
             m_component.emplace(args...);
             return;
@@ -625,7 +625,7 @@ template <typename T> class ComponentsWrapper
         if (!isTransformer() || isTransformed())
             return false;
 
-        return (Tags::Utils::isTransform<T>() && behavior == Transformation::DEFAULT) ||
+        return (Utilities::isTransform<T>() && behavior == Transformation::DEFAULT) ||
                behavior == Transformation::TRANSFORM;
     }
 

@@ -43,31 +43,30 @@ struct Effect
     }
 };
 
-namespace Utils
-{
-template <typename T, typename Base> [[nodiscard]] constexpr bool isBase()
-{
-    return internal::Utilities::isBase<T, Base>();
-}
+} // namespace Tags
 
+namespace internal
+{
+namespace Utilities
+{
 template <typename T> bool constexpr isTransform()
 {
-    return isBase<T, Transform>();
+    return isBase<T, Tags::Transform>();
 }
 
 template <typename T> constexpr bool isNotStacked()
 {
-    return isBase<T, NoStack>();
+    return isBase<T, Tags::NoStack>();
 }
 
 template <typename T> constexpr bool isEvent()
 {
-    return isBase<T, Event>();
+    return isBase<T, Tags::Event>();
 }
 
 template <typename T> constexpr bool isEffect()
 {
-    return isBase<T, Effect>();
+    return isBase<T, Tags::Effect>();
 }
 
 constexpr bool shouldDefaultToStack()
@@ -77,17 +76,17 @@ constexpr bool shouldDefaultToStack()
 
 template <typename T> constexpr bool isStacked()
 {
-    return isBase<T, Stack>();
+    return isBase<T, Tags::Stack>();
 }
 
 template <typename T> constexpr bool isRequired()
 {
-    return isBase<T, Required>();
+    return isBase<T, Tags::Required>();
 }
 
 template <typename T> constexpr bool isUnique()
 {
-    return isBase<T, Unique>();
+    return isBase<T, Tags::Unique>();
 }
 
 template <typename T> constexpr bool shouldStack()
@@ -104,6 +103,6 @@ template <typename T> constexpr bool shouldStack()
     return shouldDefaultToStack();
 }
 
-} // namespace Utils
-} // namespace Tags
+} // namespace Utilities
+} // namespace internal
 } // namespace ECS

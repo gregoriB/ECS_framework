@@ -198,7 +198,6 @@ inline void test_effect_cleanup_only_effect_components(CM &cm)
 inline void test_add_non_stack_component(CM &cm)
 {
     PRINT("TESTING ADD NON STACKED COMPONENT")
-    std::cout << "FAILED ONE";
 
     EntityId id = 2;
     assert(!cm.contains<TestNonStackedComp>(id));

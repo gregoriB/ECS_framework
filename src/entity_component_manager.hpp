@@ -113,7 +113,7 @@ template <typename EntityId> class EntityComponentManager
         if (!eId)
             return;
 
-        if constexpr (Tags::Utils::isUnique<T>())
+        if constexpr (Utilities::isUnique<T>())
         {
             addUnique<T>(eId, args...);
             return;
@@ -128,7 +128,7 @@ template <typename EntityId> class EntityComponentManager
             return;
 
         auto &cSet = getComponentSet<T>();
-        if constexpr (Tags::Utils::isUnique<T>())
+        if constexpr (Utilities::isUnique<T>())
         {
             overwriteUnique<T>(eId, cSet, args...);
             return;
@@ -168,10 +168,10 @@ template <typename EntityId> class EntityComponentManager
      */
     template <typename T>
     [[nodiscard]] std::pair<EntityId, Components<T> &> getUnique()
-        requires(Tags::Utils::isUnique<T>())
+        requires(Utilities::isUnique<T>())
     {
         auto &cSet = getComponentSet<T>();
-        ECS_ASSERT(Tags::Utils::isUnique<T>(), Utilities::getTypeName<T>() + " is not a unique component!");
+        ECS_ASSERT(Utilities::isUnique<T>(), Utilities::getTypeName<T>() + " is not a unique component!");
 
         EntityId id{0};
         Components<T> *compsPtr;
@@ -404,7 +404,7 @@ template <typename EntityId> class EntityComponentManager
         ECS_ASSERT(eId == uniqueId,
                    "Enitty ID: " + std::to_string(eId) +
                        " is not owning entity for unique component: " + Utilities::getTypeName<T>())
-        ECS_ASSERT(Tags::Utils::isUnique<T>(), Utilities::getTypeName<T>() + " is not unique!")
+        ECS_ASSERT(Utilities::isUnique<T>(), Utilities::getTypeName<T>() + " is not unique!")
 
         overwriteComponent<T>(eId, cSet, args...);
     }
@@ -412,7 +412,7 @@ template <typename EntityId> class EntityComponentManager
 #ifdef ecs_allow_debug
     template <typename Component> void debugCheckRequired(std::string operation)
     {
-        if (!Tags::Utils::isRequired<Component>())
+        if (!Utilities::isRequired<Component>())
             return;
 
         ECS_LOG_WARNING(operation, "operation performed on a required component: " +
@@ -421,7 +421,7 @@ template <typename EntityId> class EntityComponentManager
 
     template <typename T> void debugCheckForConflictingTags()
     {
-        static_assert(!(Tags::Utils::isStacked<T>() && Tags::Utils::isNotStacked<T>()),
+        static_assert(!(Utilities::isStacked<T>() && Utilities::isNotStacked<T>()),
                       "Conflicting tags detected!");
     }
 #endif
@@ -489,8 +489,7 @@ template <typename EntityId> class EntityComponentManager
     {
         auto &cSet = getComponentSet<T>();
         if (!cSet)
-            ECS_ASSERT(!Tags::Utils::isRequired<T>(),
-                       Utilities::getTypeName<T>() + " is a required component!")
+            ECS_ASSERT(!Utilities::isRequired<T>(), Utilities::getTypeName<T>() + " is a required component!")
 
         return getOrCreateComponent<T>(cSet, eId);
     }
@@ -537,7 +536,7 @@ template <typename EntityId> class EntityComponentManager
             return;
         }
 
-        if (!Tags::Utils::shouldStack<T>() && comps->size() >= 1)
+        if (!Utilities::shouldStack<T>() && comps->size() >= 1)
         {
             ECS_LOG_WARNING(eId, "Already contains a NoStack-tagged ", Utilities::getTypeName<T>(),
                             "Add failed!");
@@ -654,13 +653,13 @@ template <typename EntityId> class EntityComponentManager
     template <typename T> const std::array<size_t, 7> getTagHashes() const
     {
         return {
-            Tags::Utils::isEvent<T>() ? typeid(Tags::Event).hash_code() : 0,
-            Tags::Utils::isEffect<T>() ? typeid(Tags::Effect).hash_code() : 0,
-            Tags::Utils::isNotStacked<T>() ? typeid(Tags::NoStack).hash_code() : 0,
-            Tags::Utils::isStacked<T>() ? typeid(Tags::Stack).hash_code() : 0,
-            Tags::Utils::isTransform<T>() ? typeid(Tags::Transform).hash_code() : 0,
-            Tags::Utils::isRequired<T>() ? typeid(Tags::Required).hash_code() : 0,
-            Tags::Utils::isUnique<T>() ? typeid(Tags::Unique).hash_code() : 0,
+            Utilities::isEvent<T>() ? typeid(Tags::Event).hash_code() : 0,
+            Utilities::isEffect<T>() ? typeid(Tags::Effect).hash_code() : 0,
+            Utilities::isNotStacked<T>() ? typeid(Tags::NoStack).hash_code() : 0,
+            Utilities::isStacked<T>() ? typeid(Tags::Stack).hash_code() : 0,
+            Utilities::isTransform<T>() ? typeid(Tags::Transform).hash_code() : 0,
+            Utilities::isRequired<T>() ? typeid(Tags::Required).hash_code() : 0,
+            Utilities::isUnique<T>() ? typeid(Tags::Unique).hash_code() : 0,
         };
     }
 

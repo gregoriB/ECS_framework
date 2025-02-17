@@ -8,6 +8,8 @@
 
 namespace ECS
 {
+namespace internal
+{
 
 template <typename EntityId, typename... Ts> class Grouping
 {
@@ -807,4 +809,5 @@ template <typename EntityId> class EntityComponentManager
         return {getComponentSetPtr<Ts>()...};
     }
 };
+}; // namespace internal
 }; // namespace ECS

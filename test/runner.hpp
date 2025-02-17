@@ -16,7 +16,7 @@ enum class Tests {
     BENCHMARKS,
 };
 
-using testFn = std::function<void(ECM &)>;
+using testFn = std::function<void(CM &)>;
 inline std::vector<testFn> componentManagerTests{
     test_component_mutate_fn,
     test_component_remove_fn,
@@ -103,7 +103,7 @@ inline bool runTests(Tests testType) {
     while (count < tests.size())
     {
         auto test = tests[count];
-        ECS::EntityComponentManager<EntityId> componentManager;
+        ComponentManager componentManager{};
 
         test(componentManager);
 

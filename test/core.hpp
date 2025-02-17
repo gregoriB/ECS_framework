@@ -7,8 +7,8 @@
 #include <ecs/ecs.hpp>
 
 using EntityId = uint32_t;
-/* using ECM = struct Testing{}; */
-using ECM = ECS::EntityComponentManager<EntityId>;
+using ComponentManager = ECS::Manager<EntityId>;
+using CM = ComponentManager;
 using EId = EntityId;
 
 using Effect = ECS::Tags::Effect;

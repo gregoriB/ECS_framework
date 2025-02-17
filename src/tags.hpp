@@ -32,7 +32,7 @@ struct Unique
 struct Effect
 {
     bool cleanup{false};
-    std::optional<Timer> timer;
+    std::optional<ECS::internal::Utilities::Timer> timer;
 
     Effect()
     {
@@ -47,7 +47,7 @@ namespace Utils
 {
 template <typename T, typename Base> [[nodiscard]] constexpr bool isBase()
 {
-    return Utilities::isBase<T, Base>();
+    return internal::Utilities::isBase<T, Base>();
 }
 
 template <typename T> bool constexpr isTransform()

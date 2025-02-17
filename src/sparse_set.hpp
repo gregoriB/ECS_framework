@@ -7,6 +7,8 @@
 
 namespace ECS
 {
+namespace internal
+{
 template <typename Id, typename T>
 class SparseSet : public BaseSparseSet<Id, ComponentsWrapper<DefaultComponent>>
 {
@@ -276,4 +278,5 @@ class SparseSet : public BaseSparseSet<Id, ComponentsWrapper<DefaultComponent>>
         return m_ids.size();
     }
 };
+}; // namespace internal
 }; // namespace ECS

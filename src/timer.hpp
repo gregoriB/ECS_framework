@@ -4,6 +4,10 @@
 
 namespace ECS
 {
+namespace internal
+{
+namespace Utilities
+{
 class Timer
 {
   public:
@@ -60,4 +64,6 @@ class Timer
     std::chrono::steady_clock::time_point startTime;
     std::chrono::steady_clock::time_point stopTime;
 };
-} // namespace ECS
+}; // namespace Utilities
+}; // namespace internal
+}; // namespace ECS

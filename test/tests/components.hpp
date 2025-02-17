@@ -5,34 +5,34 @@
 #include "../helpers/utils.hpp"
 #include <iostream>
 
-inline void test_get_component(ECM &ecm)
+inline void test_get_component(CM &cm)
 {
     PRINT("TESTING MANAGER GET METHOD")
 
     EntityId id = 2;
-    ecm.add<TestNonStackedComp>(id);
+    cm.add<TestNonStackedComp>(id);
 
-    auto [testStack] = ecm.get<TestNonStackedComp>(id);
+    auto [testStack] = cm.get<TestNonStackedComp>(id);
 
     assert(testStack.size() == 1);
 }
 
-inline void test_gather_component(ECM &ecm)
+inline void test_gather_component(CM &cm)
 {
     PRINT("TESTING MANAGER GATHER METHOD")
 
     EntityId id = 2;
-    ecm.add<TestNonStackedComp>(id);
-    ecm.add<TestStackedComp>(id);
-    ecm.add<TestStackedComp>(id);
+    cm.add<TestNonStackedComp>(id);
+    cm.add<TestStackedComp>(id);
+    cm.add<TestStackedComp>(id);
 
-    auto [nonStackedComps, stackedComps] = ecm.get<TestNonStackedComp, TestStackedComp>(id);
+    auto [nonStackedComps, stackedComps] = cm.get<TestNonStackedComp, TestStackedComp>(id);
 
     assert(nonStackedComps.size() == 1);
     assert(stackedComps.size() == 2);
 }
 
-inline void test_gather_group(ECM &ecm)
+inline void test_gather_group(CM &cm)
 {
     PRINT("TESTING MANAGER GATHER GROUP METHOD")
 
@@ -40,9 +40,9 @@ inline void test_gather_group(ECM &ecm)
     EntityId id2 = 2;
 
     // Test group with 1 component and 2 entities
-    ecm.add<TestNonStackedComp>(id1);
-    ecm.add<TestNonStackedComp>(id2);
-    auto group1 = ecm.getGroup<TestNonStackedComp>();
+    cm.add<TestNonStackedComp>(id1);
+    cm.add<TestNonStackedComp>(id2);
+    auto group1 = cm.getGroup<TestNonStackedComp>();
 
     assert(group1.size() == 2);
     assert(group1.getIds().size() == 2);
@@ -53,8 +53,8 @@ inline void test_gather_group(ECM &ecm)
     assert(fromEach1.size() == 2);
 
     // Test group with 2 components and 1 entity
-    ecm.add<TestStackedComp>(id2);
-    auto group2 = ecm.getGroup<TestNonStackedComp, TestStackedComp>();
+    cm.add<TestStackedComp>(id2);
+    auto group2 = cm.getGroup<TestNonStackedComp, TestStackedComp>();
 
     assert(group2.size() == 1);
     assert(group2.getIds().size() == 1);
@@ -66,14 +66,14 @@ inline void test_gather_group(ECM &ecm)
     assert(fromEach2[0] == id2);
 }
 
-inline void test_component_mutate_fn(ECM &ecm)
+inline void test_component_mutate_fn(CM &cm)
 {
     PRINT("TESTING COMPONENT MUTATE METHOD")
 
     EntityId id = 2;
-    ecm.add<TestStackedComp>(id);
-    ecm.add<TestStackedComp>(id);
-    auto [testStack] = ecm.get<TestStackedComp>(id);
+    cm.add<TestStackedComp>(id);
+    cm.add<TestStackedComp>(id);
+    auto [testStack] = cm.get<TestStackedComp>(id);
 
     testStack.mutate([&](TestStackedComp &testStacked) { testStacked.val = 100; });
 
@@ -82,14 +82,14 @@ inline void test_component_mutate_fn(ECM &ecm)
     assert((*ptrVec[0]).val == 100);
 }
 
-inline void test_component_inspect_fn(ECM &ecm)
+inline void test_component_inspect_fn(CM &cm)
 {
     PRINT("TESTING COMPONENT INSPECT METHOD")
 
     EntityId id = 2;
-    ecm.add<TestStackedComp>(id);
-    ecm.add<TestStackedComp>(id);
-    auto [testStack] = ecm.get<TestStackedComp>(id);
+    cm.add<TestStackedComp>(id);
+    cm.add<TestStackedComp>(id);
+    auto [testStack] = cm.get<TestStackedComp>(id);
     int count{0};
 
     testStack.inspect([&](const TestStackedComp &testStacked) {
@@ -100,14 +100,14 @@ inline void test_component_inspect_fn(ECM &ecm)
     assert(count == 2);
 }
 
-inline void test_component_remove_fn(ECM &ecm)
+inline void test_component_remove_fn(CM &cm)
 {
     PRINT("TESTING COMPONENT REMOVE METHOD")
 
     EntityId id = 2;
-    ecm.add<TestStackedComp>(id);
-    ecm.add<TestStackedComp>(id);
-    auto [testStack] = ecm.get<TestStackedComp>(id);
+    cm.add<TestStackedComp>(id);
+    cm.add<TestStackedComp>(id);
+    auto [testStack] = cm.get<TestStackedComp>(id);
 
     assert(testStack.size() == 2);
 
@@ -116,15 +116,15 @@ inline void test_component_remove_fn(ECM &ecm)
     assert(testStack.size() == 0);
 }
 
-inline void test_component_remove_conditionally(ECM &ecm)
+inline void test_component_remove_conditionally(CM &cm)
 {
     PRINT("TESTING COMPONENT REMOVE CONDITIONALLY")
 
     EntityId id = 2;
-    ecm.add<TestStackedComp>(id, 1);
-    ecm.add<TestStackedComp>(id, 2);
-    ecm.add<TestStackedComp>(id, 3);
-    auto [testStack] = ecm.get<TestStackedComp>(id);
+    cm.add<TestStackedComp>(id, 1);
+    cm.add<TestStackedComp>(id, 2);
+    cm.add<TestStackedComp>(id, 3);
+    auto [testStack] = cm.get<TestStackedComp>(id);
 
     assert(testStack.size() == 3);
 
@@ -134,29 +134,29 @@ inline void test_component_remove_conditionally(ECM &ecm)
 }
 
 #ifdef ecs_allow_experimental
-inline void test_effect_cleanup_timed(ECM &ecm)
+inline void test_effect_cleanup_timed(CM &cm)
 {
     PRINT("TESTING EFFECT CLEANUP TIMED")
 
     EntityId id = 2;
-    ecm.add<TestEffectCompTimed>(id, 0.0f);
+    cm.add<TestEffectCompTimed>(id, 0.0f);
 
-    ecm.eachByTag<ECS::Tags::Effect>(
+    cm.eachByTag<ECS::Tags::Effect>(
         [&](EntityId eId, auto &effectComps) { effectComps.remove(isEffectExpired); });
 
-    auto [testEffectTimed] = ecm.get<TestEffectCompTimed>(id);
+    auto [testEffectTimed] = cm.get<TestEffectCompTimed>(id);
     assert(testEffectTimed.size() == 0);
 }
 
-inline void test_effect_cleanup(ECM &ecm)
+inline void test_effect_cleanup(CM &cm)
 {
     PRINT("TESTING EFFECT CLEANUP")
 
     EntityId id = 2;
-    ecm.add<TestEffectComp>(id);
-    auto [testEffect] = ecm.get<TestEffectComp>(id);
+    cm.add<TestEffectComp>(id);
+    auto [testEffect] = cm.get<TestEffectComp>(id);
     testEffect.mutate(markForCleanup);
-    ecm.eachByTag<ECS::Tags::Effect>(
+    cm.eachByTag<ECS::Tags::Effect>(
         [&](EntityId eId, auto &effectComps) { effectComps.remove(isEffectExpired); });
 
     testEffect.mutate([&](TestEffectComp &testEffect) { testEffect.value = 2; });
@@ -164,21 +164,21 @@ inline void test_effect_cleanup(ECM &ecm)
     assert(testEffect.size() == 0);
 }
 
-inline void test_effect_cleanup_only_effect_components(ECM &ecm)
+inline void test_effect_cleanup_only_effect_components(CM &cm)
 {
     PRINT("TESTING EFFECT CLEANUP ONLY EFFECTS")
 
     EntityId id = 2;
-    ecm.add<TestEventComp>(id);
-    ecm.add<TestTransformComp>(id);
-    ecm.add<TestNonStackedComp>(id);
+    cm.add<TestEventComp>(id);
+    cm.add<TestTransformComp>(id);
+    cm.add<TestNonStackedComp>(id);
 
-    ecm.eachByTag<ECS::Tags::Effect>(
+    cm.eachByTag<ECS::Tags::Effect>(
         [&](EntityId eId, auto &effectComps) { effectComps.remove(isEffectExpired); });
 
-    auto [testEvents] = ecm.get<TestEventComp>(id);
-    auto [testnonstacks] = ecm.get<TestNonStackedComp>(id);
-    auto [testTransformeds] = ecm.get<TestTransformComp>(id);
+    auto [testEvents] = cm.get<TestEventComp>(id);
+    auto [testnonstacks] = cm.get<TestNonStackedComp>(id);
+    auto [testTransformeds] = cm.get<TestTransformComp>(id);
 
     testEvents.mutate(
         [&](TestEventComp &testEvent) { assert(testEvent.message == "this is an event component"); });
@@ -195,124 +195,124 @@ inline void test_effect_cleanup_only_effect_components(ECM &ecm)
 }
 #endif
 
-inline void test_add_non_stack_component(ECM &ecm)
+inline void test_add_non_stack_component(CM &cm)
 {
     PRINT("TESTING ADD NON STACKED COMPONENT")
     std::cout << "FAILED ONE";
 
     EntityId id = 2;
-    assert(!ecm.contains<TestNonStackedComp>(id));
+    assert(!cm.contains<TestNonStackedComp>(id));
 
-    ecm.add<TestNonStackedComp>(id);
-    auto [comp] = ecm.get<TestNonStackedComp>(id);
+    cm.add<TestNonStackedComp>(id);
+    auto [comp] = cm.get<TestNonStackedComp>(id);
 
     assert(comp.size() == 1);
 }
 
-inline void test_add_more_non_stack_components_fail(ECM &ecm)
+inline void test_add_more_non_stack_components_fail(CM &cm)
 {
     PRINT("TESTING ADD MORE NON STACKED COMPONENTS FAIL")
 
     EntityId id = 2;
 
-    ecm.add<TestNonStackedComp>(id);
-    auto [comp] = ecm.get<TestNonStackedComp>(id);
+    cm.add<TestNonStackedComp>(id);
+    auto [comp] = cm.get<TestNonStackedComp>(id);
 
     assert(comp.size() == 1);
 
-    ecm.add<TestNonStackedComp>(id);
+    cm.add<TestNonStackedComp>(id);
 
     assert(comp.size() == 1);
 }
 
-inline void test_add_stacked_components(ECM &ecm)
+inline void test_add_stacked_components(CM &cm)
 {
     PRINT("TESTING ADD STACKED COMPONENTS")
 
     EntityId id = 2;
-    auto [comp] = ecm.get<TestStackedComp>(id);
+    auto [comp] = cm.get<TestStackedComp>(id);
     assert(comp.size() == 0);
 
-    ecm.add<TestStackedComp>(id);
+    cm.add<TestStackedComp>(id);
 
     assert(comp.size() == 1);
 
-    ecm.add<TestStackedComp>(id);
+    cm.add<TestStackedComp>(id);
 
     assert(comp.size() == 2);
 }
 
-inline void test_add_event_components(ECM &ecm)
+inline void test_add_event_components(CM &cm)
 {
     PRINT("TESTING ADD EVENT COMPONENTS")
 
     EntityId id = 2;
-    assert(!ecm.contains<TestEventComp>(id));
+    assert(!cm.contains<TestEventComp>(id));
 
-    ecm.add<TestEventComp>(id);
+    cm.add<TestEventComp>(id);
 
-    auto [comp] = ecm.get<TestEventComp>(id);
+    auto [comp] = cm.get<TestEventComp>(id);
     assert(comp.size() == 1);
 
-    ecm.add<TestEventComp>(id);
+    cm.add<TestEventComp>(id);
 
     assert(comp.size() == 2);
 }
 
-inline void test_add_effect_components(ECM &ecm)
+inline void test_add_effect_components(CM &cm)
 {
     PRINT("TESTING ADD EFFECT COMPONENTS")
 
     EntityId id = 2;
 
-    ecm.add<TestEffectComp>(id);
+    cm.add<TestEffectComp>(id);
 
-    auto [comp] = ecm.get<TestEffectComp>(id);
+    auto [comp] = cm.get<TestEffectComp>(id);
     assert(comp.size() == 1);
 
-    ecm.add<TestEffectComp>(id);
+    cm.add<TestEffectComp>(id);
 
     assert(comp.size() == 2);
 }
 
-inline void test_clear_all_components(ECM &ecm)
+inline void test_clear_all_components(CM &cm)
 {
     PRINT("TESTING CLEAR ALL COMPONENTS")
 
     EntityId id1 = 1;
     EntityId id2 = 2;
     EntityId id3 = 3;
-    ecm.add<TestEventComp>(id1);
-    ecm.add<TestStackedComp>(id2);
-    ecm.add<TestNonStackedComp>(id3);
+    cm.add<TestEventComp>(id1);
+    cm.add<TestStackedComp>(id2);
+    cm.add<TestNonStackedComp>(id3);
 
-    ecm.clear<TestEventComp, TestStackedComp, TestNonStackedComp>();
+    cm.clear<TestEventComp, TestStackedComp, TestNonStackedComp>();
 
-    assert(!ecm.exists<TestEventComp>());
-    assert(!ecm.exists<TestStackedComp>());
-    assert(!ecm.exists<TestNonStackedComp>());
+    assert(!cm.exists<TestEventComp>());
+    assert(!cm.exists<TestStackedComp>());
+    assert(!cm.exists<TestNonStackedComp>());
 }
 
-inline void test_clear_components_by_tag(ECM &ecm)
+inline void test_clear_components_by_tag(CM &cm)
 {
     PRINT("TESTING CLEAR COMPONENTS BY TAG")
 
     EntityId id1 = 1;
     EntityId id2 = 2;
     EntityId id3 = 3;
-    ecm.add<TestEventComp>(id1);
-    ecm.add<TestEventComp>(id2);
-    ecm.add<TestEventComp>(id3);
+    cm.add<TestEventComp>(id1);
+    cm.add<TestEventComp>(id2);
+    cm.add<TestEventComp>(id3);
 
-    auto [testEventCompSet] = ecm.getAll<TestEventComp>();
+    auto [testEventCompSet] = cm.getAll<TestEventComp>();
     assert(testEventCompSet.size() == 3);
 
-    ecm.clear<ECS::Tags::Event>();
+    cm.clear<ECS::Tags::Event>();
 
-    assert(!ecm.exists<TestEventComp>());
+    assert(!cm.exists<TestEventComp>());
 }
 
-inline void test_clear_all_by_entity(ECM &ecm)
+inline void test_clear_all_by_entity(CM &cm)
 {
     PRINT("TESTING CLEAR ALL COMPONENTS BY ENTITY ID")
 
@@ -320,73 +320,73 @@ inline void test_clear_all_by_entity(ECM &ecm)
     EntityId id2 = 2;
     EntityId id3 = 3;
 
-    ecm.add<TestEventComp>(id1);
-    ecm.add<TestEffectComp>(id1);
-    ecm.add<TestStackedComp>(id1);
-    ecm.add<TestNonStackedComp>(id1);
+    cm.add<TestEventComp>(id1);
+    cm.add<TestEffectComp>(id1);
+    cm.add<TestStackedComp>(id1);
+    cm.add<TestNonStackedComp>(id1);
 
-    ecm.add<TestEventComp>(id2);
-    ecm.add<TestEffectComp>(id2);
-    ecm.add<TestStackedComp>(id2);
-    ecm.add<TestNonStackedComp>(id2);
+    cm.add<TestEventComp>(id2);
+    cm.add<TestEffectComp>(id2);
+    cm.add<TestStackedComp>(id2);
+    cm.add<TestNonStackedComp>(id2);
 
-    ecm.add<TestEventComp>(id3);
-    ecm.add<TestEffectComp>(id3);
-    ecm.add<TestStackedComp>(id3);
-    ecm.add<TestNonStackedComp>(id3);
+    cm.add<TestEventComp>(id3);
+    cm.add<TestEffectComp>(id3);
+    cm.add<TestStackedComp>(id3);
+    cm.add<TestNonStackedComp>(id3);
 
     auto [testEventCompSet, testEffectCompSet, testStackedCompSet, testNonStackCompSet] =
-        ecm.getAll<TestEventComp, TestEffectComp, TestStackedComp, TestNonStackedComp>();
+        cm.getAll<TestEventComp, TestEffectComp, TestStackedComp, TestNonStackedComp>();
     assert(testEventCompSet.size() == 3);
     assert(testEffectCompSet.size() == 3);
     assert(testStackedCompSet.size() == 3);
     assert(testNonStackCompSet.size() == 3);
 
-    ecm.remove(id2);
+    cm.remove(id2);
 
     assert(testEventCompSet.size() == 2);
     assert(testEffectCompSet.size() == 2);
     assert(testStackedCompSet.size() == 2);
     assert(testNonStackCompSet.size() == 2);
 
-    assert(!ecm.contains<TestNonStackedComp>(id2));
-    assert(!ecm.contains<TestEventComp>(id2));
-    assert(!ecm.contains<TestEffectComp>(id2));
-    assert(!ecm.contains<TestStackedComp>(id2));
+    assert(!cm.contains<TestNonStackedComp>(id2));
+    assert(!cm.contains<TestEventComp>(id2));
+    assert(!cm.contains<TestEffectComp>(id2));
+    assert(!cm.contains<TestStackedComp>(id2));
 }
 
-inline void test_prune(ECM &ecm)
+inline void test_prune(CM &cm)
 {
     PRINT("TESTING PRUNE")
 
     EntityId id{1};
-    ecm.add<TestEffectComp>(id, 1);
-    ecm.add<TestEffectComp>(id, 2);
+    cm.add<TestEffectComp>(id, 1);
+    cm.add<TestEffectComp>(id, 2);
 
-    auto [compsSet] = ecm.getAll<TestEffectComp>();
+    auto [compsSet] = cm.getAll<TestEffectComp>();
     assert(compsSet.size() == 1);
 
-    auto [comps] = ecm.get<TestEffectComp>(id);
+    auto [comps] = cm.get<TestEffectComp>(id);
     comps.remove([&](const TestEffectComp &testComp) { return true; });
 
     assert(comps.size() == 0);
 
-    ecm.prune<TestEffectComp>();
+    cm.prune<TestEffectComp>();
 
-    assert(!ecm.exists<TestEffectComp>());
+    assert(!cm.exists<TestEffectComp>());
 }
 
-inline void test_prune_multi(ECM &ecm)
+inline void test_prune_multi(CM &cm)
 {
     PRINT("TESTING PRUNE MULTIPLE")
 
     EntityId id{1};
-    ecm.add<TestEffectComp>(id, 1);
-    ecm.add<TestNonStackedComp>(id, 1);
-    ecm.add<TestStackedComp>(id, 1);
+    cm.add<TestEffectComp>(id, 1);
+    cm.add<TestNonStackedComp>(id, 1);
+    cm.add<TestStackedComp>(id, 1);
 
     auto [effectComps, nonstackComps, stackedComps] =
-        ecm.get<TestEffectComp, TestNonStackedComp, TestStackedComp>(id);
+        cm.get<TestEffectComp, TestNonStackedComp, TestStackedComp>(id);
     effectComps.remove([&](const TestEffectComp &testComp) { return true; });
     nonstackComps.remove([&](const TestNonStackedComp &testComp) { return true; });
     stackedComps.remove([&](const TestStackedComp &testComp) { return true; });
@@ -395,53 +395,53 @@ inline void test_prune_multi(ECM &ecm)
     assert(nonstackComps.size() == 0);
     assert(stackedComps.size() == 0);
 
-    ecm.prune<TestEffectComp, TestStackedComp, TestNonStackedComp>();
+    cm.prune<TestEffectComp, TestStackedComp, TestNonStackedComp>();
 
-    assert(!ecm.exists<TestEffectComp>());
-    assert(!ecm.exists<TestNonStackedComp>());
-    assert(!ecm.exists<TestStackedComp>());
+    assert(!cm.exists<TestEffectComp>());
+    assert(!cm.exists<TestNonStackedComp>());
+    assert(!cm.exists<TestStackedComp>());
 }
 
 #ifdef ecs_allow_experimental
-inline void test_prune_all(ECM &ecm)
+inline void test_prune_all(CM &cm)
 {
     PRINT("TESTING PRUNE ALL")
 
     EntityId id{1};
-    ecm.add<TestEffectComp>(id, 1);
-    ecm.add<TestEffectComp>(id, 2);
-    ecm.add<TestNonStackedComp>(id, 3);
-    ecm.add<TestNonStackedComp>(id, 4);
+    cm.add<TestEffectComp>(id, 1);
+    cm.add<TestEffectComp>(id, 2);
+    cm.add<TestNonStackedComp>(id, 3);
+    cm.add<TestNonStackedComp>(id, 4);
 
-    auto [compsSet] = ecm.getAll<TestEffectComp>();
+    auto [compsSet] = cm.getAll<TestEffectComp>();
     assert(compsSet.size() == 1);
 
-    auto [comps1, comps2] = ecm.get<TestEffectComp, TestNonStackedComp>(id);
+    auto [comps1, comps2] = cm.get<TestEffectComp, TestNonStackedComp>(id);
     comps1.remove([&](const TestEffectComp &testComp) { return true; });
     comps2.remove([&](const TestNonStackedComp &testComp) { return true; });
 
     assert(comps1.size() == 0);
     assert(comps2.size() == 0);
 
-    ecm.pruneAll();
+    cm.pruneAll();
 
-    assert(!ecm.exists<TestEffectComp>());
-    assert(!ecm.exists<TestNonStackedComp>());
+    assert(!cm.exists<TestEffectComp>());
+    assert(!cm.exists<TestNonStackedComp>());
 }
 #endif
 
-inline void test_sparse_set_auto_prune(ECM &ecm)
+inline void test_sparse_set_auto_prune(CM &cm)
 {
     PRINT("TESTING AUTO PRUNE")
 
     EntityId id{1};
-    ecm.add<TestEffectComp>(id, 1);
-    ecm.add<TestEffectComp>(id, 2);
+    cm.add<TestEffectComp>(id, 1);
+    cm.add<TestEffectComp>(id, 2);
 
-    auto [compsSet] = ecm.getAll<TestEffectComp>();
+    auto [compsSet] = cm.getAll<TestEffectComp>();
     assert(compsSet.size() == 1);
 
-    auto [comps] = ecm.get<TestEffectComp>(id);
+    auto [comps] = cm.get<TestEffectComp>(id);
     comps.remove([&](const TestEffectComp &testComp) { return true; });
 
     assert(comps.size() == 0);
@@ -449,28 +449,28 @@ inline void test_sparse_set_auto_prune(ECM &ecm)
     int count{};
     compsSet.each([&](EId eId, auto &testComps) { count++; });
 
-    assert(!ecm.exists<TestEffectComp>());
+    assert(!cm.exists<TestEffectComp>());
 }
 
-inline void test_sparse_set_auto_prune_after_removal(ECM &ecm)
+inline void test_sparse_set_auto_prune_after_removal(CM &cm)
 {
     PRINT("TESTING AUTO PRUNE AFTER REMOVE")
 
     EntityId id{1};
-    ecm.add<TestEffectComp>(id, 1);
-    ecm.add<TestEffectComp>(id, 2);
+    cm.add<TestEffectComp>(id, 1);
+    cm.add<TestEffectComp>(id, 2);
 
-    auto [compsSet] = ecm.getAll<TestEffectComp>();
+    auto [compsSet] = cm.getAll<TestEffectComp>();
     assert(compsSet.size() == 1);
 
     compsSet.each(
         [&](EId eId, auto &comps) { comps.remove([&](const TestEffectComp &testComp) { return true; }); });
 
-    assert(!ecm.exists<TestEffectComp>());
+    assert(!cm.exists<TestEffectComp>());
 }
 
 #ifdef ecs_allow_experimental
-inline void test_prune_by_tag(ECM &ecm)
+inline void test_prune_by_tag(CM &cm)
 {
     PRINT("TESTING PRUNE BY TAG")
 
@@ -479,26 +479,26 @@ inline void test_prune_by_tag(ECM &ecm)
     EntityId id3{3};
     EntityId id4{4};
     EntityId id5{5};
-    ecm.add<TestEffectComp>(id1, 1);
-    ecm.add<TestEffectComp>(id1, 2);
+    cm.add<TestEffectComp>(id1, 1);
+    cm.add<TestEffectComp>(id1, 2);
 
-    ecm.add<TestEffectComp>(id2, 1);
-    ecm.add<TestEffectComp>(id2, 2);
+    cm.add<TestEffectComp>(id2, 1);
+    cm.add<TestEffectComp>(id2, 2);
 
-    ecm.add<TestEffectCompTimed>(id3);
-    ecm.add<TestEffectCompTimed>(id3, 3);
-    /* ecm.add<TestEffectCompTimed>(id3, 0.0f); */
+    cm.add<TestEffectCompTimed>(id3);
+    cm.add<TestEffectCompTimed>(id3, 3);
+    /* cm.add<TestEffectCompTimed>(id3, 0.0f); */
 
-    ecm.add<TestEffectCompTimed>(id4);
-    ecm.add<TestEffectCompTimed>(id4, 4);
+    cm.add<TestEffectCompTimed>(id4);
+    cm.add<TestEffectCompTimed>(id4, 4);
 
-    ecm.add<TestEffectCompTimed>(id5);
-    ecm.add<TestEffectCompTimed>(id5, 5);
+    cm.add<TestEffectCompTimed>(id5);
+    cm.add<TestEffectCompTimed>(id5, 5);
 
-    auto [untimedEffectSet, timedEffectSet] = ecm.getAll<TestEffectComp, TestEffectCompTimed>();
-    auto [testEffectComp1, testEffectComp2] = ecm.get<TestEffectComp>(id1, id2);
+    auto [untimedEffectSet, timedEffectSet] = cm.getAll<TestEffectComp, TestEffectCompTimed>();
+    auto [testEffectComp1, testEffectComp2] = cm.get<TestEffectComp>(id1, id2);
     auto [testEffectCompTimed3, testEffectCompTimed4, testEffectCompTimed5] =
-        ecm.get<TestEffectComp>(id3, id4, id5);
+        cm.get<TestEffectComp>(id3, id4, id5);
 
     assert(untimedEffectSet.size() == 2);
     assert(timedEffectSet.size() == 3);
@@ -523,7 +523,7 @@ inline void test_prune_by_tag(ECM &ecm)
     assert(untimedEffectSet.size() == 2);
     assert(timedEffectSet.size() == 3);
 
-    ecm.pruneByTag<ECS::Tags::Effect>();
+    cm.pruneByTag<ECS::Tags::Effect>();
 
     assert(untimedEffectSet.size() == 1);
     assert(timedEffectSet.size() == 2);

@@ -7,6 +7,8 @@
 
 namespace ECS
 {
+namespace internal
+{
 
 enum class Transformation
 {
@@ -690,4 +692,5 @@ template <typename T> class ComponentsWrapper
         return 0;
     }
 };
+}; // namespace internal
 }; // namespace ECS

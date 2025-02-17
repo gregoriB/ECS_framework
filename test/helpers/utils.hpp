@@ -20,14 +20,14 @@ inline std::function<bool(const Effect &)> isEffectExpired = [](const Effect &ef
     return false;
 };
 
-template <typename... Components> inline void createAndAdd(ECM &ecm)
+template <typename... Components> inline void createAndAdd(CM &cm)
 {
-    EntityId id = ecm.createEntity();
-    (ecm.add<Components>(id), ...);
+    EntityId id = cm.createEntity();
+    (cm.add<Components>(id), ...);
 }
 
-template <typename... Components> inline void createEntityWithComponents(ECM &ecm, int entityCount)
+template <typename... Components> inline void createEntityWithComponents(CM &cm, int entityCount)
 {
     for (int i = 1; i < entityCount + 1; ++i)
-        (ecm.add<Components>(i), ...);
+        (cm.add<Components>(i), ...);
 }

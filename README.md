@@ -31,14 +31,14 @@ struct MovementComponent : ECS::Tags::NoStack {
     MovementComponent(float _vX, float _vY) : vX(_vX), vY(_vY) {};
 };
 
-void createPlayer(ComponentManager &cm, float x, float y) {
+void createPlayer(ECS::Manager &cm, float x, float y) {
     EntityId id = cm.createEntity();
     cm.add<PlayerComponent>(id);
     cm.add<PositionComponent>(id, x, y);
     cm.add<MovementComponent>(id, 16.0f, 16.0f);
 }
 
-void createEnemy(ComponentManager &cm, float x, float y) {
+void createEnemy(ECS::Manager &cm, float x, float y) {
     EntityId id = cm.createEntity();
     cm.add<PositionComponent>(id, x, y);
     cm.add<MovementComponent>(id, 16.0f, 16.0f);
@@ -46,7 +46,7 @@ void createEnemy(ComponentManager &cm, float x, float y) {
 ```
 Some system performing updates on entities
 ```cpp
-void update(ComponentManager &cm)
+void update(ECS::Manager &cm)
 {
     auto group = cm.getGroup<MovementComponent, PositionComponent>();
 

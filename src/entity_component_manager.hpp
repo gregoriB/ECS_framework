@@ -144,8 +144,6 @@ template <typename EntityId> class EntityComponentManager
      * the entity component is added.
      *
      * @tparam T - Component type
-     *
-     * @tparam Args - Variadic args
      * @tparam Ids - Variadiac id arguments
      *
      * @param Entity Id

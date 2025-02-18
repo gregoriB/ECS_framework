@@ -2,7 +2,6 @@
 
 #include "base_sparse_set.hpp"
 #include "components.hpp"
-#include "core.hpp"
 #include "macros.hpp"
 #include "utilities.hpp"
 
@@ -10,6 +9,9 @@ namespace ECS
 {
 namespace internal
 {
+/**
+ * @brief A sparse set for storing components of the same type.
+ */
 template <typename Id, typename T>
 class SparseSet : public BaseSparseSet<Id, ComponentsWrapper<DefaultComponent>>
 {

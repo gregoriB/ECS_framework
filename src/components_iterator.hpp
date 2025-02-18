@@ -11,7 +11,7 @@ enum class Arrangement
     STACKED,
 };
 
-template <typename T> class ComponentIterator
+template <typename T> class ComponentsIterator
 {
   public:
     std::vector<T *>::iterator m_modifiedIter;
@@ -26,7 +26,7 @@ template <typename T> class ComponentIterator
     T *m_component;
     bool isComponent{false};
 
-    ComponentIterator(std::vector<T *>::iterator _iter, Arrangement _arrangement)
+    ComponentsIterator(std::vector<T *>::iterator _iter, Arrangement _arrangement)
     {
         switch (_arrangement)
         {
@@ -38,7 +38,7 @@ template <typename T> class ComponentIterator
             ECS_LOG_WARNING("Arrangement not found for", ECS::internal::Utilities::getTypeName<T>(), "!")
         }
     }
-    ComponentIterator(std::vector<T>::iterator _iter, Arrangement _arrangement)
+    ComponentsIterator(std::vector<T>::iterator _iter, Arrangement _arrangement)
     {
         switch (_arrangement)
         {
@@ -54,7 +54,7 @@ template <typename T> class ComponentIterator
             ECS_LOG_WARNING("Arrangement not found for", ECS::internal::Utilities::getTypeName<T>(), "!")
         }
     }
-    ComponentIterator(T *_component) : m_component(_component), isComponent(true)
+    ComponentsIterator(T *_component) : m_component(_component), isComponent(true)
     {
     }
 
@@ -76,7 +76,7 @@ template <typename T> class ComponentIterator
         return *m_component;
     }
 
-    ComponentIterator &operator++()
+    ComponentsIterator &operator++()
     {
         ECS_ASSERT((isModified + isTransformed + isComponents + isComponent) == 1,
                    "Iterator has conflicting modes!")
@@ -93,7 +93,7 @@ template <typename T> class ComponentIterator
         return *this;
     }
 
-    bool operator==(const ComponentIterator &other) const
+    bool operator==(const ComponentsIterator &other) const
     {
         ECS_ASSERT((isModified + isTransformed + isComponents + isComponent) == 1,
                    "Iterator has conflicting modes!")
@@ -111,7 +111,7 @@ template <typename T> class ComponentIterator
         return m_component == other.m_component;
     }
 
-    bool operator!=(const ComponentIterator &other) const
+    bool operator!=(const ComponentsIterator &other) const
     {
         return !(*this == other);
     }

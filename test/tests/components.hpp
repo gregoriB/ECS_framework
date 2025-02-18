@@ -274,6 +274,88 @@ inline void test_add_effect_components(CM &cm)
     assert(comp.size() == 2);
 }
 
+inline void test_remove_single_entities_for_multiple_components(CM &cm)
+{
+    PRINT("TESTING REMOVE SINGLE ID FROM MULTIPLE COMPONENT SETS")
+
+    EntityId id1 = 1;
+    cm.add<TestEventComp>(id1);
+    cm.add<TestStackedComp>(id1);
+    cm.add<TestNonStackedComp>(id1);
+
+    cm.remove<TestEventComp, TestStackedComp, TestNonStackedComp>(id1);
+
+    assert(!cm.contains<TestEventComp>(id1));
+    assert(!cm.contains<TestStackedComp>(id1));
+    assert(!cm.contains<TestNonStackedComp>(id1));
+}
+
+inline void test_remove_multiple_entities_for_multiple_components(CM &cm)
+{
+    PRINT("TESTING REMOVE MULTIPLE IDS FROM MULTIPLE COMPONENT SETS")
+
+    EntityId id1 = 1;
+    EntityId id2 = 2;
+    EntityId id3 = 3;
+
+    cm.add<TestEventComp>(id1);
+    cm.add<TestEventComp>(id2);
+    cm.add<TestEventComp>(id3);
+    cm.add<TestStackedComp>(id1);
+    cm.add<TestStackedComp>(id2);
+    cm.add<TestStackedComp>(id3);
+    cm.add<TestNonStackedComp>(id1);
+    cm.add<TestNonStackedComp>(id2);
+    cm.add<TestNonStackedComp>(id3);
+
+    cm.remove<TestEventComp, TestStackedComp, TestNonStackedComp>(id1, id2, id3);
+
+    assert(!cm.contains<TestEventComp>(id1));
+    assert(!cm.contains<TestStackedComp>(id1));
+    assert(!cm.contains<TestNonStackedComp>(id1));
+
+    assert(!cm.contains<TestEventComp>(id2));
+    assert(!cm.contains<TestStackedComp>(id2));
+    assert(!cm.contains<TestNonStackedComp>(id2));
+
+    assert(!cm.contains<TestEventComp>(id3));
+    assert(!cm.contains<TestStackedComp>(id3));
+    assert(!cm.contains<TestNonStackedComp>(id3));
+}
+
+inline void test_remove_multiple_entities_for_multiple_components_by_vector(CM &cm)
+{
+    PRINT("TESTING REMOVE MULTIPLE IDS FOR MULTIPLE COMPONENT SETS BY VECTOR")
+
+    EntityId id1 = 1;
+    EntityId id2 = 2;
+    EntityId id3 = 3;
+
+    cm.add<TestEventComp>(id1);
+    cm.add<TestEventComp>(id2);
+    cm.add<TestEventComp>(id3);
+    cm.add<TestStackedComp>(id1);
+    cm.add<TestStackedComp>(id2);
+    cm.add<TestStackedComp>(id3);
+    cm.add<TestNonStackedComp>(id1);
+    cm.add<TestNonStackedComp>(id2);
+    cm.add<TestNonStackedComp>(id3);
+
+    cm.remove<TestEventComp, TestStackedComp, TestNonStackedComp>(std::vector{id1, id2, id3});
+
+    assert(!cm.contains<TestEventComp>(id1));
+    assert(!cm.contains<TestStackedComp>(id1));
+    assert(!cm.contains<TestNonStackedComp>(id1));
+
+    assert(!cm.contains<TestEventComp>(id2));
+    assert(!cm.contains<TestStackedComp>(id2));
+    assert(!cm.contains<TestNonStackedComp>(id2));
+
+    assert(!cm.contains<TestEventComp>(id3));
+    assert(!cm.contains<TestStackedComp>(id3));
+    assert(!cm.contains<TestNonStackedComp>(id3));
+}
+
 inline void test_clear_all_components(CM &cm)
 {
     PRINT("TESTING CLEAR ALL COMPONENTS")

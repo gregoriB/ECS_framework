@@ -1,7 +1,6 @@
 #pragma once
 
 #include "components_iterator.hpp"
-#include "core.hpp"
 #include "macros.hpp"
 #include "tags.hpp"
 #include "utilities.hpp"
@@ -24,6 +23,21 @@ enum class Transformation
     TRANSFORM
 };
 
+/**
+ * @brief A wrapper for a component of the specific type.  The wrapper controls how the component is arranged and provides access methods for the component data
+ *
+ * This components wrapper is intended to be the only way to access component data, and to allow the user to safely access component data
+ * Access is very controlled, and some methods are not even available unless certain criteria is met, such as a specific component tag is used
+ *
+ * Components are stored in various configuration, depending on how their tag and/or how they were created.
+ * For instance, NoStack-tagged components are not store or accessed via vector
+ * Filtered, narrowed, and sorted components are via a vector of pointers to the original components
+ * Transformed components are at this time stored in a vector, regardless of their tag
+ *
+ * Accessor and filtering methods are provided.  However, the only way to make any mutations on a component are via the .mutate method
+ * This means every other method either provides const references or copies
+ * The exception to this it the unsafe .unpack() method, which is provides raw pointers and is only accessible via compiler flag.  This is an escape hatch and not intended for regular use
+ */
 template <typename T> class ComponentsWrapper
 {
   public:
@@ -484,7 +498,7 @@ template <typename T> class ComponentsWrapper
     template <typename EntityId> friend class EntityComponentManager;
 
   private:
-    using Iterator = ComponentIterator<T>;
+    using Iterator = ComponentsIterator<T>;
 
     Iterator begin()
     {

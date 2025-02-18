@@ -1,4 +1,6 @@
 #pragma once
+
+#include "core.hpp"
 #include "utilities.hpp"
 
 #ifdef ecs_disable_asserts

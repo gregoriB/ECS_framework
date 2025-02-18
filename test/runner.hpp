@@ -1,7 +1,6 @@
 #pragma once
 
 #include "core.hpp"
-#include "ecs/ecs.hpp"
 #include "tests/benchmarks.hpp"
 #include "tests/components.hpp"
 #include "tests/utilities.hpp"
@@ -37,6 +36,10 @@ inline std::vector<testFn> componentManagerTests{
     test_add_stacked_components,
     test_add_event_components,
     test_add_effect_components,
+
+    test_remove_single_entities_for_multiple_components,
+    test_remove_multiple_entities_for_multiple_components,
+    test_remove_multiple_entities_for_multiple_components_by_vector,
     
     test_clear_all_components,
     test_clear_components_by_tag,
@@ -83,6 +86,7 @@ inline std::vector<testFn> benchmarkTests{
 
 inline bool runTests(Tests testType) {
 
+
     std::vector<testFn> tests;
     switch(testType)
     {
@@ -109,6 +113,7 @@ inline bool runTests(Tests testType) {
 
         count++;
     }
+
 
     PRINT("#################### RESULTS #####################")
     PRINT("              ", count, " TESTS PASSED"            )

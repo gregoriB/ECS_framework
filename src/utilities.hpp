@@ -26,6 +26,11 @@ template <typename T, typename Base> [[nodiscard]] constexpr bool isBase()
     return false;
 }
 
+/**
+ * @deprecated !! This will be removed in a future version - Recommend to use the MagicEnum library instead !!
+ * 
+ * @brief meta template convenience class for using enum elements as strings
+ */
 template <typename EnumValue, int Count = 0> class EnumStringConverter final
 {
   public:
@@ -85,19 +90,27 @@ template <typename EnumValue> struct EnumStringConverter<EnumValue, ENUM_STRING_
 };
 
 /**
- * A convenience that assumes the string definitely exists. BE CAREFUL!
+ * @deprecated !! This will be removed in a future version - Recommend to use the MagicEnum library instead !!
+ *
+ * A convenience function that assumes the string definitely exists. BE CAREFUL!
  */
 template <typename Enum> [[nodiscard]] inline constexpr std::string_view getEnumString(Enum value)
 {
     return EnumStringConverter<Enum>{}.convert(value).value();
 }
 
+/**
+ * @deprecated !! This will be removed in a future version - Recommend to use the MagicEnum library instead !!
+ */
 template <typename Enum>
 [[nodiscard]] inline constexpr std::optional<std::string_view> getOptionalEnumString(Enum value)
 {
     return EnumStringConverter<Enum>{}.convert(value);
 }
 
+/**
+ * @deprecated !! This will be removed in a future version - Recommend to use the MagicEnum library instead !!
+ */
 template <typename Enum> [[nodiscard]] inline constexpr size_t getEnumSize()
 {
     size_t enumSize{};
@@ -111,6 +124,9 @@ template <typename Enum> [[nodiscard]] inline constexpr size_t getEnumSize()
     return enumSize;
 }
 
+/**
+ * @deprecated !! This will be removed in a future version - Recommend to use the MagicEnum library instead !!
+ */
 template <typename Enum> [[nodiscard]] inline constexpr std::array<Enum, getEnumSize<Enum>()> getEnumArray()
 {
     return std::array<Enum, getEnumSize<Enum>()>{};
@@ -129,12 +145,6 @@ template <typename... Args> constexpr void print(const Args &...args)
 template <typename... Args> constexpr void debugWarningPrint(const Args &...args)
 {
     std::cout << "\n ================= ECS ENGINE DEBUG LOG ===================\n";
-    print(args..., '\n');
-};
-
-template <typename... Args> constexpr void benchmarkPrint(const Args &...args)
-{
-    std::cout << "\n ================= ECS BENCHMARK LOG ===================\n";
     print(args..., '\n');
 };
 

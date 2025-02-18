@@ -1,7 +1,6 @@
 #pragma once
 
 #include "components.hpp"
-#include "core.hpp"
 #include "macros.hpp"
 #include "sparse_set.hpp"
 #include "tags.hpp"
@@ -12,6 +11,9 @@ namespace ECS
 namespace internal
 {
 
+/**
+ * @brief A grouping of entities which have all of the specified components.
+ */
 template <typename EntityId, typename... Ts> class Grouping
 {
   private:
@@ -68,6 +70,9 @@ template <typename EntityId, typename... Ts> class Grouping
 #endif
 };
 
+/**
+ * @brief The main entry point into the ECS.  Used to add, query, and remove components and component sets, as well as perform other operations.
+ */
 template <typename EntityId> class EntityComponentManager
 {
   private:
@@ -96,7 +101,7 @@ template <typename EntityId> class EntityComponentManager
 
     EntityId createEntity()
     {
-        return m_nextEntityId++;
+        return ++m_nextEntityId;
     }
 
     /**
@@ -110,7 +115,7 @@ template <typename EntityId> class EntityComponentManager
      */
     template <typename T, typename... Args> void add(EntityId eId, Args... args)
     {
-        if (!eId)
+        if (eId == 0)
             return;
 
         if constexpr (Utilities::isUnique<T>())
@@ -124,17 +129,20 @@ template <typename EntityId> class EntityComponentManager
 
     template <typename T, typename... Args> void overwrite(EntityId eId, Args... args)
     {
-        if (!eId)
+        if (eId == 0)
             return;
 
-        auto &cSet = getComponentSet<T>();
+        auto cSet = getComponentSetPtr<T>();
+        if (!cSet)
+            return;
+
         if constexpr (Utilities::isUnique<T>())
         {
-            overwriteUnique<T>(eId, cSet, args...);
+            overwriteUnique<T>(eId, *cSet, args...);
             return;
         }
 
-        overwriteComponent<T>(eId, cSet, args...);
+        overwriteComponent<T>(eId, *cSet, args...);
     }
 
     /**
@@ -231,10 +239,17 @@ template <typename EntityId> class EntityComponentManager
                 if (shouldBreak)
                     return;
 
-                auto &cSet = getComponentSet<Ts>();
+                auto cSet = getComponentSetPtr<Ts>();
+                if (!cSet)
+                {
+                    ids.clear();
+                    shouldBreak = true;
+                    return;
+                }
+
                 if (ids.empty())
                 {
-                    auto &entityIds = cSet.getIds();
+                    auto &entityIds = cSet->getIds();
                     ids = std::unordered_set<EntityId>(entityIds.begin(), entityIds.end());
                 }
                 else
@@ -242,13 +257,13 @@ template <typename EntityId> class EntityComponentManager
                     // TODO Task : Reevalue auto-pruning on the component set
                     // Maybe do it on .contains(id) call instead, for each set element
                     // which contains but evaluates to falsy
-                    cSet.prune();
+                    cSet->prune();
                     for (auto iter = ids.begin(); iter != ids.end();)
-                        iter = cSet.contains(*iter) ? std::next(iter) : ids.erase(iter);
+                        iter = cSet->contains(*iter) ? std::next(iter) : ids.erase(iter);
                 }
 
                 if (!ids.empty())
-                    std::get<ComponentSet<Ts> *>(sets) = &cSet;
+                    std::get<ComponentSet<Ts> *>(sets) = cSet;
                 else
                     shouldBreak = true;
             }(),
@@ -315,12 +330,30 @@ template <typename EntityId> class EntityComponentManager
         clearComponents<Ts...>();
     }
 
+    template <typename T> void removeIds(const std::vector<EntityId> &ids)
+    {
+        auto cSetPtr = getComponentSetPtr<T>();
+        if (!cSetPtr)
+            return;
+
+        cSetPtr->erase(ids);
+    }
+
+    template <typename T, typename... Ids> void removeIds(Ids... ids)
+    {
+        auto cSetPtr = getComponentSetPtr<T>();
+        if (!cSetPtr)
+            return;
+
+        cSetPtr->erase(ids...);
+    }
+
     /**
      * @brief Remove specified ids from each specified set
      */
     template <typename... Ts> void remove(const std::vector<EntityId> &ids)
     {
-        (getComponentSet<Ts>().erase(ids), ...);
+        (removeIds<Ts>(ids), ...);
     }
 
     /**
@@ -328,7 +361,7 @@ template <typename EntityId> class EntityComponentManager
      */
     template <typename... Ts, typename... Ids> void remove(Ids... ids)
     {
-        ([&]() { getComponentSet<Ts>(m_minSetSize).erase(ids...); }(), ...);
+        (removeIds<Ts>(ids...), ...);
     }
 
     /**
@@ -342,7 +375,7 @@ template <typename EntityId> class EntityComponentManager
             return;
         }
 
-        (getComponentSet<Ts>().erase(eId), ...);
+        (removeIds<Ts>(eId), ...);
     }
 
     /**
@@ -502,7 +535,6 @@ template <typename EntityId> class EntityComponentManager
         auto comps = cSet.get(eId);
         if (!comps)
         {
-
             Components<T> dummy{Components<T>::ComponentFlags::EMPTY};
             if (cSet.isLocked())
             {

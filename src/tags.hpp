@@ -18,13 +18,15 @@ struct Stack
 {
 };
 /**
- * @brief Always stacks unless specifically tagged otherwise.  Intended to be used with transient components which needs to be batch-removed
+ * @brief Always stacks unless specifically tagged otherwise.  Intended to be used with transient components
+ * which needs to be batch-removed
  */
 struct Event
 {
 };
 /**
- * @brief Prevents components from stacking to allow for only a single instance of a component per entity.  Also gives access to a few additional accessor methods
+ * @brief Prevents components from stacking to allow for only a single instance of a component per entity.
+ * Also gives access to a few additional accessor methods
  */
 struct NoStack
 {
@@ -42,7 +44,8 @@ struct Required
 {
 };
 /**
- * @brief Will enforce that only a single instance of a component exists at any given time.  Also provides a more convenient access method
+ * @brief Will enforce that only a single instance of a component exists at any given time.  Also provides a
+ * more convenient access method
  */
 struct Unique
 {
@@ -50,7 +53,7 @@ struct Unique
 
 /**
  * @deprecated This will be removed in a future version once custom tags are implemented
- * 
+ *
  * @brief Has no special behavior within the library.  This is a purely game logic component
  */
 struct Effect

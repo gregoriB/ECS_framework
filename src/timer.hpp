@@ -10,7 +10,7 @@ namespace Utilities
 {
 /**
  * @deprecated This will be removed in a future version once custom tags are implemented
- * 
+ *
  * @brief Has no use within the library.  This is a purely game logic component
  */
 class Timer

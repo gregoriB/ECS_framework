@@ -13,7 +13,8 @@ namespace ECS
 template <typename EntityId, typename T> using Set = internal::SparseSet<EntityId, T>;
 
 /**
- * @brief The main entry point into the ECS.  Used to add, query, and remove components and component sets, as well as perform other operations.
+ * @brief The main entry point into the ECS.  Used to add, query, and remove components and component sets, as
+ * well as perform other operations.
  */
 template <typename EntityId> using Manager = internal::EntityComponentManager<EntityId>;
 
@@ -23,7 +24,8 @@ template <typename EntityId> using Manager = internal::EntityComponentManager<En
 template <typename EntityId, typename T> using Group = internal::Grouping<EntityId, T>;
 
 /**
- * @brief A wrapper for a component of the specific type.  The wrapper controls how the component is arranged and provides access methods for the component data.
+ * @brief A wrapper for a component of the specific type.  The wrapper controls how the component is arranged
+ * and provides access methods for the component data.
  */
 template <typename T> using Components = internal::ComponentsWrapper<T>;
 } // namespace ECS

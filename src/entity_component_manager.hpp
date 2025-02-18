@@ -91,7 +91,8 @@ template <typename EntityId, typename... Ts> class Grouping
 };
 
 /**
- * @brief The main entry point into the ECS.  Used to add, query, and remove components and component sets, as well as perform other operations.
+ * @brief The main entry point into the ECS.  Used to add, query, and remove components and component sets, as
+ * well as perform other operations.
  */
 template <typename EntityId> class EntityComponentManager
 {
@@ -139,11 +140,16 @@ template <typename EntityId> class EntityComponentManager
     /**
      * @brief Constructs and add a component to a set by entity id
      *
-     * @param Entity Id
-     * @param Variable arguments for the component constructor
-     *
      * If the component set has not yet been created, it is created before
      * the entity component is added.
+     *
+     * @tparam T - Component type
+     *
+     * @tparam Args - Variadic args
+     * @tparam Ids - Variadiac id arguments
+     *
+     * @param Entity Id
+     * @param Variable arguments for the component constructor
      */
     template <typename T, typename... Args> void add(EntityId eId, Args... args)
     {
@@ -161,6 +167,9 @@ template <typename EntityId> class EntityComponentManager
 
     /**
      * @brief Overwrites a components instance for the specified entity
+     *
+     * @tparam Args - Variadic args
+     * @tparam Ids - Variadiac id arguments
      *
      * @param Entity Id
      * @param Variable arguments for the component constructor
@@ -207,7 +216,7 @@ template <typename EntityId> class EntityComponentManager
      *
      * @param Entity ids
      *
-     * @return std::tuple of components
+     * @return Container of components
      */
     template <typename T, typename... Ids> [[nodiscard]] auto get(EntityId id, Ids... ids)
     {
@@ -219,7 +228,7 @@ template <typename EntityId> class EntityComponentManager
      *
      * @tparam T - Component type
      *
-     * @return std::pair containing the entity id and component reference
+     * @return Container with the entity id and component
      */
     template <typename T>
     [[nodiscard]] std::pair<EntityId, Components<T> &> getUnique()
@@ -254,7 +263,7 @@ template <typename EntityId> class EntityComponentManager
      *
      * @tparam T - Variadiac type arguments
      *
-     * @return std::vector<EntityId> Entity ids
+     * @return Container of entity ids
      */
     template <typename T, typename... Ts> [[nodiscard]] const std::vector<EntityId> getEntityIds()
     {
@@ -336,7 +345,7 @@ template <typename EntityId> class EntityComponentManager
      *
      * @tparam Ts - Component types
      *
-     * @return std::tuple of component sets
+     * @return Container of component sets
      */
     template <typename... Ts> [[nodiscard]] std::tuple<ComponentSet<Ts> &...> getAll()
     {

@@ -28,7 +28,7 @@ template <typename T, typename Base> [[nodiscard]] constexpr bool isBase()
 
 /**
  * @deprecated This will be removed in a future version - Recommend to use the magic_enum library instead
- * 
+ *
  * @brief meta template convenience class for using enum elements as strings
  */
 template <typename EnumValue, int Count = 0> class EnumStringConverter final

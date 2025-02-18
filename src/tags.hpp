@@ -49,7 +49,7 @@ struct Unique
 };
 
 /**
- * @deprecated !! This will be removed in a future version once custom tags are implemented !!
+ * @deprecated This will be removed in a future version once custom tags are implemented
  * 
  * @brief Has no special behavior within the library.  This is a purely game logic component
  */

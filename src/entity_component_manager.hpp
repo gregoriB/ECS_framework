@@ -24,6 +24,11 @@ template <typename EntityId, typename... Ts> class Grouping
     Grouping(std::vector<EntityId> _ids = {}) {};
     Grouping(std::vector<EntityId> _ids, std::tuple<Ts *...> _values) : m_ids(_ids), m_values(_values) {};
 
+    /**
+     * @brief Iterate over component set and pass the entity components into the function
+     *
+     * @param Function which accepts the entity id and component types
+     */
     template <typename Func> void each(Func &&fn)
     {
         for (const auto &id : m_ids)
@@ -42,16 +47,31 @@ template <typename EntityId, typename... Ts> class Grouping
 #endif
     }
 
+    /**
+     * @brief Get the number of entities which share all specified component types
+     *
+     * @return size_t
+     */
     [[nodiscard]] size_t size() const
     {
         return m_ids.size();
     }
 
+    /**
+     * @brief Evaluate by number of entities
+     *
+     * @return size_t
+     */
     [[nodiscard]] explicit operator bool() const
     {
         return !!size();
     }
 
+    /**
+     * @brief Get a const reference of the entity ids
+     *
+     * @return const std::vector<EntityId>
+     */
     [[nodiscard]] const std::vector<EntityId> &getIds() const
     {
         return m_ids;
@@ -92,6 +112,13 @@ template <typename EntityId> class EntityComponentManager
     using StoredTransformationFnMap = std::unordered_map<size_t, StoredTransformationFn>;
 
   public:
+    /**
+     * @brief Entity Component Manager constructor
+     *
+     * @param reservedEntities - Number of entity ids to keep in reserve, starting from 1
+     * @param minSetSize - Minimum number of elements a set should contain
+     * @param setSize - Specific number of elements a set should contain in most cases
+     */
     EntityComponentManager(EntityId reservedEntities = 10, size_t minSetSize = 100, size_t setSize = 10024)
     {
         m_nextEntityId = static_cast<EntityId>(reservedEntities);
@@ -99,6 +126,11 @@ template <typename EntityId> class EntityComponentManager
         m_standardSetSize = setSize;
     }
 
+    /**
+     * @brief Creates a new unique entity id
+     *
+     * @return EntityId
+     */
     EntityId createEntity()
     {
         return ++m_nextEntityId;
@@ -127,6 +159,12 @@ template <typename EntityId> class EntityComponentManager
         addComponent<T>(eId, args...);
     }
 
+    /**
+     * @brief Overwrites a components instance for the specified entity
+     *
+     * @param Entity Id
+     * @param Variable arguments for the component constructor
+     */
     template <typename T, typename... Args> void overwrite(EntityId eId, Args... args)
     {
         if (eId == 0)
@@ -148,6 +186,9 @@ template <typename EntityId> class EntityComponentManager
     /**
      * @brief Get specified components for the entity
      *
+     * @tparam Ts - Component types
+     * @tparam Ids - Variadiac id arguments
+     *
      * @param Entity Id
      *
      * @return Entity component reference
@@ -160,9 +201,13 @@ template <typename EntityId> class EntityComponentManager
     /**
      * @brief Get a specified component for multiple entities
      *
-     * @params Entity IDs
      *
-     * @return Tuple of component references
+     * @tparam T - Component type
+     * @tparam Ids - Variadiac id arguments
+     *
+     * @param Entity ids
+     *
+     * @return std::tuple of components
      */
     template <typename T, typename... Ids> [[nodiscard]] auto get(EntityId id, Ids... ids)
     {
@@ -170,7 +215,9 @@ template <typename EntityId> class EntityComponentManager
     }
 
     /**
-     * @brief Get a specified UNIQUE component
+     * @brief Get a specified unique component
+     *
+     * @tparam T - Component type
      *
      * @return std::pair containing the entity id and component reference
      */
@@ -202,6 +249,13 @@ template <typename EntityId> class EntityComponentManager
         return {0, std::get<0>(compsTuple)};
     }
 
+    /**
+     * @brief Get the entity ids which are persistent across all specified component types
+     *
+     * @tparam T - Variadiac type arguments
+     *
+     * @return std::vector<EntityId> Entity ids
+     */
     template <typename T, typename... Ts> [[nodiscard]] const std::vector<EntityId> getEntityIds()
     {
         if constexpr (sizeof...(Ts) == 0)
@@ -225,6 +279,8 @@ template <typename EntityId> class EntityComponentManager
      * @brief Find overlapping entities for the specified types
      *
      * Creates a group of entities with all of the specified types in common
+     *
+     * @tparam Ts - Component types
      *
      * @return Grouping of entities
      */
@@ -278,7 +334,9 @@ template <typename EntityId> class EntityComponentManager
     /**
      * @brief Gets entire component sets
      *
-     * @return Container of component sets
+     * @tparam Ts - Component types
+     *
+     * @return std::tuple of component sets
      */
     template <typename... Ts> [[nodiscard]] std::tuple<ComponentSet<Ts> &...> getAll()
     {
@@ -287,6 +345,8 @@ template <typename EntityId> class EntityComponentManager
 
     /**
      * @brief Check whether or not the component set contains the entity id
+     *
+     * @tparam T - Component type
      *
      * @param Entity Id
      *
@@ -308,6 +368,8 @@ template <typename EntityId> class EntityComponentManager
     /**
      * @brief Check whether or not the component set exists
      *
+     * @tparam T - Component type
+     *
      * @return Bool - true if component set exists
      */
     template <typename T> [[nodiscard]] bool exists()
@@ -321,6 +383,8 @@ template <typename EntityId> class EntityComponentManager
 
     /**
      * @brief Clear entire component sets
+     *
+     * @tparam Ts - Component types
      */
     template <typename... Ts> void clear()
     {
@@ -332,6 +396,8 @@ template <typename EntityId> class EntityComponentManager
 
     /**
      * @brief Remove specified ids from each specified set
+     *
+     * @tparam Ts - Component types
      */
     template <typename... Ts> void remove(const std::vector<EntityId> &ids)
     {
@@ -340,6 +406,9 @@ template <typename EntityId> class EntityComponentManager
 
     /**
      * @brief Remove specified ids from each specified set
+     *
+     * @tparam Ts - Component types
+     * @tparam Ids - Variadic ids arguments
      */
     template <typename... Ts, typename... Ids> void remove(Ids... ids)
     {
@@ -348,6 +417,8 @@ template <typename EntityId> class EntityComponentManager
 
     /**
      * @brief Remove the id from each specified set
+     *
+     * @tparam Ts - Component types
      */
     template <typename... Ts> void remove(EntityId eId)
     {
@@ -371,6 +442,8 @@ template <typename EntityId> class EntityComponentManager
 
     /**
      * @brief Remove specified ids from EVERY set
+     *
+     * @tparam Ids - Variadic ids arguments
      */
     template <typename... Ids> void remove(Ids... ids)
     {
@@ -380,6 +453,8 @@ template <typename EntityId> class EntityComponentManager
 
     /**
      * @brief Iterate over and remove empty components from the specified sets
+     *
+     * @tparam Ts - Component types
      */
     template <typename... Ts> void prune()
     {
@@ -388,6 +463,8 @@ template <typename EntityId> class EntityComponentManager
 
     /**
      * @brief Stores a transformation function for the specified component
+     *
+     * @param Transformation function
      */
     template <typename T> constexpr void registerTransformation(TransformationFn<T> transformationFn)
     {

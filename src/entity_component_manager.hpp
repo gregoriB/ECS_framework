@@ -330,24 +330,6 @@ template <typename EntityId> class EntityComponentManager
         clearComponents<Ts...>();
     }
 
-    template <typename T> void removeIds(const std::vector<EntityId> &ids)
-    {
-        auto cSetPtr = getComponentSetPtr<T>();
-        if (!cSetPtr)
-            return;
-
-        cSetPtr->erase(ids);
-    }
-
-    template <typename T, typename... Ids> void removeIds(Ids... ids)
-    {
-        auto cSetPtr = getComponentSetPtr<T>();
-        if (!cSetPtr)
-            return;
-
-        cSetPtr->erase(ids...);
-    }
-
     /**
      * @brief Remove specified ids from each specified set
      */
@@ -417,6 +399,24 @@ template <typename EntityId> class EntityComponentManager
     EntityComponentManager &operator=(const EntityComponentManager &) = delete;
 
   private:
+    template <typename T> void removeIds(const std::vector<EntityId> &ids)
+    {
+        auto cSetPtr = getComponentSetPtr<T>();
+        if (!cSetPtr)
+            return;
+
+        cSetPtr->erase(ids);
+    }
+
+    template <typename T, typename... Ids> void removeIds(Ids... ids)
+    {
+        auto cSetPtr = getComponentSetPtr<T>();
+        if (!cSetPtr)
+            return;
+
+        cSetPtr->erase(ids...);
+    }
+
     void removeEntity(EntityId eId)
     {
         for (auto iter = getStoredComponents().begin(); iter != getStoredComponents().end(); ++iter)

@@ -27,7 +27,7 @@ template <typename T, typename Base> [[nodiscard]] constexpr bool isBase()
 }
 
 /**
- * @deprecated !! This will be removed in a future version - Recommend to use the MagicEnum library instead !!
+ * @deprecated This will be removed in a future version - Recommend to use the magic_enum library instead
  * 
  * @brief meta template convenience class for using enum elements as strings
  */
@@ -90,7 +90,7 @@ template <typename EnumValue> struct EnumStringConverter<EnumValue, ENUM_STRING_
 };
 
 /**
- * @deprecated !! This will be removed in a future version - Recommend to use the MagicEnum library instead !!
+ * @deprecated This will be removed in a future version - Recommend to use the magic_enum library instead
  *
  * A convenience function that assumes the string definitely exists. BE CAREFUL!
  */
@@ -100,7 +100,7 @@ template <typename Enum> [[nodiscard]] inline constexpr std::string_view getEnum
 }
 
 /**
- * @deprecated !! This will be removed in a future version - Recommend to use the MagicEnum library instead !!
+ * @deprecated This will be removed in a future version - Recommend to use the magic_enum library instead
  */
 template <typename Enum>
 [[nodiscard]] inline constexpr std::optional<std::string_view> getOptionalEnumString(Enum value)
@@ -109,7 +109,7 @@ template <typename Enum>
 }
 
 /**
- * @deprecated !! This will be removed in a future version - Recommend to use the MagicEnum library instead !!
+ * @deprecated This will be removed in a future version - Recommend to use the magic_enum library instead
  */
 template <typename Enum> [[nodiscard]] inline constexpr size_t getEnumSize()
 {
@@ -125,7 +125,7 @@ template <typename Enum> [[nodiscard]] inline constexpr size_t getEnumSize()
 }
 
 /**
- * @deprecated !! This will be removed in a future version - Recommend to use the MagicEnum library instead !!
+ * @deprecated This will be removed in a future version - Recommend to use the magic_enum library instead
  */
 template <typename Enum> [[nodiscard]] inline constexpr std::array<Enum, getEnumSize<Enum>()> getEnumArray()
 {

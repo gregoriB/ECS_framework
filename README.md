@@ -16,7 +16,7 @@
 - [Block Invaders][game_url] - Space Invaders clone/approximation
 
 ## Documentation
--- COMING SOON --
+[Auto-generated with Doxygen][docs_url]
 
 ## Example Usage
 Creating entities:
@@ -101,8 +101,10 @@ Regarding library development, once I reach a point where the library has the fe
 
 ## License
 
--- FREE AND OPEN SOURCE LICENSE COMING SOON ONCE I HAVE RESEARCHED IT --
+-- FREE AND OPEN SOURCE LICENSE COMING SOON --
 
 [//]: # ()
+
+   [docs_url]: <https://ecslibarydocs.netlify.app/>
    [game_url]: <https://github.com/gregoriB/block_invaders-ecs_library_example_game>
    [cmake_url]: <https://cmake.org>

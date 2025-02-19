@@ -8,7 +8,7 @@
     * Easily group components
     * Enable extended component functionality
 - Many convience methods for components, eg:
-    * .sort(), .reduce(), .find(), .peek() ...and more!
+    * .filter(), .sort(), .remove(), .find() ...and more! [See the docs for more information][docs_components_wrapper_url]
 - Data-oriented development approach for better CPU cache performance
 - Automatic Component Transformation pipelines
 
@@ -106,5 +106,6 @@ Regarding library development, once I reach a point where the library has the fe
 [//]: # ()
 
    [docs_url]: <https://ecslibarydocs.netlify.app>
+   [docs_components_wrapper_url]: <https://ecslibarydocs.netlify.app/classecs_1_1internal_1_1componentswrapper>
    [game_url]: <https://github.com/gregoriB/block_invaders-ecs_library_example_game>
    [cmake_url]: <https://cmake.org>

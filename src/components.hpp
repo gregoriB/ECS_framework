@@ -62,7 +62,7 @@ template <typename T> class ComponentsWrapper
     template <typename U> using Components = ComponentsWrapper<U>;
 
     /**
-     * @brief Standard read/write each function
+     * @brief Standard read/write for each function
      *
      * @param Function
      * @param Transformation pipeline behavior
@@ -91,7 +91,7 @@ template <typename T> class ComponentsWrapper
     }
 
     /**
-     * @brief Read-only each function
+     * @brief Read-only for each function
      *
      * @param Function
      * @param Transformation pipeline behavior
@@ -113,7 +113,7 @@ template <typename T> class ComponentsWrapper
     }
 
     /**
-     * @brief Allows for creating new derived data from the component
+     * @brief NON-STACKED COMPONENT ONLY! Allows for creating new derived data from the component
      *
      * @param Function
      * @param Transformation pipeline behavior
@@ -138,6 +138,14 @@ template <typename T> class ComponentsWrapper
             return std::forward<decltype(fn)>(fn)(comp);
     }
 
+    /**
+     * @brief NON-STACKED COMPONENT ONLY! Allows for creating new derived data from the component
+     *
+     * @param Function
+     * @param Transformation pipeline behavior
+     *
+     * @return Derived data instance
+     */
     template <typename P>
     [[nodiscard]] P derive(auto &&fn, Transformation behavior = Transformation::DEFAULT)
         requires(std::invocable<std::decay_t<decltype(fn)>, const T &> && !Utilities::shouldStack<T>())
@@ -160,12 +168,12 @@ template <typename T> class ComponentsWrapper
     }
 
     /**
-     * @brief Extract a value as readonly FROM A NON-STACKED COMPONENT.
+     * @brief NON-STACKED COMPONENT ONLY! - Extract a value as readonly
      *
      * @param T::Prop
      * @param Transformation pipeline behavior
      *
-     * @return Property reference
+     * @return Component property reference
      */
     template <typename Prop>
     [[nodiscard]] const Prop &peek(Transformation behavior, Prop T::*prop)
@@ -181,6 +189,14 @@ template <typename T> class ComponentsWrapper
         return (*begin()).*prop;
     }
 
+    /**
+     * @brief NON-STACKED COMPONENT ONLY! - Extract a value as readonly
+     *
+     * @param T::Prop
+     * @param Transformation pipeline behavior
+     *
+     * @return Component property reference
+     */
     template <typename Prop>
     [[nodiscard]] const Prop &peek(Prop T::*prop)
         requires(!Utilities::shouldStack<T>())
@@ -188,6 +204,14 @@ template <typename T> class ComponentsWrapper
         return peek(Transformation::DEFAULT, prop);
     }
 
+    /**
+     * @brief NON-STACKED COMPONENT ONLY! - Extract a value as readonly
+     *
+     * @param T::Prop
+     * @param Transformation pipeline behavior
+     *
+     * @return Container of references to component properties
+     */
     template <typename... Props>
     [[nodiscard]] auto peek(Transformation behavior, Props T::*...props)
         requires(!Utilities::shouldStack<T>())
@@ -200,6 +224,14 @@ template <typename T> class ComponentsWrapper
         return std::make_tuple((*begin()).*props...);
     }
 
+    /**
+     * @brief NON-STACKED COMPONENT ONLY! - Extract a value as readonly
+     *
+     * @param T::Prop
+     * @param Transformation pipeline behavior
+     *
+     * @return Container of references to component properties
+     */
     template <typename... Props>
     [[nodiscard]] auto peek(Props T::*...props)
         requires(!Utilities::shouldStack<T>())
@@ -213,7 +245,7 @@ template <typename T> class ComponentsWrapper
      * @param Function
      * @param Transformation pipeline behavior
      *
-     * @return New Components wrapper containing the filtered results
+     * @return New Components wrapper instance containing the filtered results
      */
     template <typename Func>
     [[nodiscard]] Components<T> filter(Func &&fn, Transformation behavior = Transformation::DEFAULT)
@@ -253,7 +285,7 @@ template <typename T> class ComponentsWrapper
      * @param Function
      * @param Transformation pipeline behavior
      *
-     * @return New Components wrapper containing the result
+     * @return New Components wrapper instance containing the found results
      */
     template <typename Func>
     [[nodiscard]] Components<T> find(Func &&fn, Transformation behavior = Transformation::DEFAULT)
@@ -295,7 +327,7 @@ template <typename T> class ComponentsWrapper
      * @param Function
      * @param Transformation pipeline behavior
      *
-     * @return New Components wrapper containing the result
+     * @return New Components wrapper instance containing the first component
      */
     [[nodiscard]] Components<T> first(Transformation behavior = Transformation::DEFAULT)
     {
@@ -325,7 +357,7 @@ template <typename T> class ComponentsWrapper
      * @param Function
      * @param Transformation pipeline behavior
      *
-     * @return New Components wrapper containing the result
+     * @return New Components wrapper instance containing the last component
      */
     [[nodiscard]] Components<T> last(Transformation behavior = Transformation::DEFAULT)
     {
@@ -353,7 +385,7 @@ template <typename T> class ComponentsWrapper
      * @param Function
      * @param Transformation pipeline behavior
      *
-     * @return New Components wrapper containing the sorted results
+     * @return New Components wrapper instance containing the sorted components
      */
     template <typename Func>
     [[nodiscard]] Components<T> sort(Func &&fn, Transformation behavior = Transformation::DEFAULT)
@@ -393,19 +425,19 @@ template <typename T> class ComponentsWrapper
      *
      * Creates an instance of the component with the reduced properties
      *
-     * @param Function
+     * @param Reducer function
      * @param Transformation pipeline behavior
      *
-     * @return Accumulator - Reduced Component instance
+     * @return Reduced Component instance
      */
     template <typename Func>
     [[nodiscard]] T reduce(Func &&fn, T reduced, Transformation behavior = Transformation::DEFAULT)
         requires std::invocable<Func, T &, const T &>
     {
         static_assert(std::is_invocable_v<Func, T &, const T &>,
-                      "Reduce function must take const T& as argument.");
+                      "Reducer function must take const T& as argument.");
         static_assert(std::is_convertible_v<std::invoke_result_t<Func, T &, const T &>, void>,
-                      "Reduce function should not return a value.");
+                      "Reducer function should not return a value.");
 
         if (isEmpty())
             return reduced;
@@ -427,7 +459,7 @@ template <typename T> class ComponentsWrapper
      * TO CREATE THE NEW INSTANCE, AND THOSE ARGUMENTS SHOULD PROBABLY
      * BE 0/FALSY OR ELSE COULD LEAD TO UNEXPECTED BEHAVIOR
      *
-     * @param Function
+     * @param Reducer function
      * @param Transformation pipeline behavior
      *
      * @return Accumulator - Reduced Component instance
@@ -437,18 +469,18 @@ template <typename T> class ComponentsWrapper
         requires std::invocable<Func, T &, const T &>
     {
         static_assert(std::is_invocable_v<Func, T &, const T &>,
-                      "Reduce function must take const T& as argument.");
+                      "Reducer function must take const T& as argument.");
         static_assert(std::is_convertible_v<std::invoke_result_t<Func, T &, const T &>, void>,
-                      "Reduce function should not return a value.");
+                      "Reducer function should not return a value.");
         static_assert(std::is_default_constructible_v<T>, "Component is not default constructable");
 
         return reduce(fn, T{}, behavior);
     }
 
     /**
-     * @brief Remove components specified by the results of the function argument
+     * @brief Remove component if it evaluates to true
      *
-     * @param Function
+     * @param Removal check function
      */
     template <typename Func>
     void remove(Func &&fn)
@@ -481,6 +513,9 @@ template <typename T> class ComponentsWrapper
         }
     }
 
+    /**
+     * @brief Evaluate truthiness based on the existence of stored values
+     */
     explicit operator bool() const
     {
         if (isEmpty())

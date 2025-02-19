@@ -26,3 +26,4 @@
 - Implement a more robust testing framework?
 - Add better benchmarks
   * Compare against other ECS libraries
+- Private constructors for internal classes

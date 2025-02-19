@@ -21,6 +21,9 @@
 ## Example Usage
 Creating entities:
 ```cpp
+using EntityId = int;
+using ComponentManager = ECS::Manager<EntityId>;
+
 struct PlayerComponent : ECS::Tags::Unique {};
 struct PositionComponent : ECS::Tags::NoStack {
     float x, float y;
@@ -31,14 +34,14 @@ struct MovementComponent : ECS::Tags::NoStack {
     MovementComponent(float _vX, float _vY) : vX(_vX), vY(_vY) {};
 };
 
-void createPlayer(ECS::Manager &cm, float x, float y) {
+void createPlayer(ComponentManager &cm, float x, float y) {
     EntityId id = cm.createEntity();
     cm.add<PlayerComponent>(id);
     cm.add<PositionComponent>(id, x, y);
     cm.add<MovementComponent>(id, 16.0f, 16.0f);
 }
 
-void createEnemy(ECS::Manager &cm, float x, float y) {
+void createEnemy(ComponentManager &cm, float x, float y) {
     EntityId id = cm.createEntity();
     cm.add<PositionComponent>(id, x, y);
     cm.add<MovementComponent>(id, 16.0f, 16.0f);
@@ -46,7 +49,10 @@ void createEnemy(ECS::Manager &cm, float x, float y) {
 ```
 Some system performing updates on entities
 ```cpp
-void update(ECS::Manager &cm)
+using EntityId = int;
+using ComponentManager = ECS::Manager<EntityId>;
+
+void update(ComponentManager &cm)
 {
     auto group = cm.getGroup<MovementComponent, PositionComponent>();
 

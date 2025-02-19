@@ -114,7 +114,6 @@ inline bool runTests(Tests testType) {
         count++;
     }
 
-
     PRINT("#################### RESULTS #####################")
     PRINT("              ", count, " TESTS PASSED"            )
     PRINT("##################################################")

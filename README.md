@@ -107,7 +107,7 @@ Regarding library development, once I reach a point where the library has the fe
 
 ## License
 
--- FREE AND OPEN SOURCE LICENSE COMING SOON --
+MIT
 
 [//]: # ()
 

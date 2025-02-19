@@ -4,6 +4,8 @@
 #include "macros.hpp"
 #include "tags.hpp"
 #include "utilities.hpp"
+#include <functional>
+#include <tuple>
 
 namespace ECS
 {
@@ -186,7 +188,7 @@ template <typename T> class ComponentsWrapper
 
         handleTransformations(behavior);
 
-        return (*begin()).*prop;
+        return getConstProp(prop);
     }
 
     /**
@@ -204,8 +206,6 @@ template <typename T> class ComponentsWrapper
         return peek(Transformation::DEFAULT, prop);
     }
 
-#ifndef ecs_allow_experimental
-  private:
     /**
      * @brief NON-STACKED COMPONENT ONLY! - Extract a value as readonly
      *
@@ -215,7 +215,7 @@ template <typename T> class ComponentsWrapper
      * @return Container of references to component properties
      */
     template <typename... Props>
-    [[nodiscard]] auto peek(Transformation behavior, Props T::*...props)
+    [[nodiscard]] std::tuple<const Props &...> peek(Transformation behavior, Props T::*...props)
         requires(!Utilities::shouldStack<T>())
     {
         ECS_ASSERT(!isEmpty(), "One or more properties could not be peeked from Component: " +
@@ -223,7 +223,7 @@ template <typename T> class ComponentsWrapper
 
         handleTransformations(behavior);
 
-        return std::make_tuple((*begin()).*props...);
+        return std::tie(getConstProp(props)...);
     }
 
     /**
@@ -235,14 +235,11 @@ template <typename T> class ComponentsWrapper
      * @return Container of references to component properties
      */
     template <typename... Props>
-    [[nodiscard]] auto peek(Props T::*...props)
+    [[nodiscard]] std::tuple<const Props &...> peek(Props T::*...props)
         requires(!Utilities::shouldStack<T>())
     {
         return peek(Transformation::DEFAULT, props...);
     }
-
-  public:
-#endif
 
     /**
      * @brief Filter components
@@ -597,6 +594,11 @@ template <typename T> class ComponentsWrapper
         }
 
         emplace_back(args...);
+    }
+
+    template <typename Prop> [[nodiscard]] const Prop &getConstProp(Prop T::*prop)
+    {
+        return *begin().*prop;
     }
 
 #ifdef ecs_allow_unsafe

@@ -31,7 +31,7 @@ template <typename EntityId, typename... Ts> class Grouping
      */
     template <typename Func> void each(Func &&fn)
     {
-        if constexpr (Utilities::ReturnsBool<Func, EntityId, Ts... >)
+        if constexpr (Utilities::ReturnsBool<Func, EntityId, Ts...>)
             eachWithBreak(fn);
         else
             eachNoBreak(fn);
@@ -71,7 +71,7 @@ template <typename EntityId, typename... Ts> class Grouping
         return m_ids;
     }
 
-private:
+  private:
     template <typename Func> void eachWithBreak(Func &&fn)
     {
         for (const auto &id : m_ids)
@@ -84,7 +84,6 @@ private:
             if (!fn(id, *std::get<Ts *>(m_values)->get(id)...))
                 break;
         }
-
     }
 
     template <typename Func> void eachNoBreak(Func &&fn)
@@ -121,5 +120,5 @@ private:
 #endif
 };
 
-}
-};
+} // namespace internal
+}; // namespace ECS

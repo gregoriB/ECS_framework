@@ -1,11 +1,11 @@
 #pragma once
 
 #include "components.hpp"
+#include "grouping.hpp"
 #include "macros.hpp"
 #include "sparse_set.hpp"
 #include "tags.hpp"
 #include "utilities.hpp"
-#include "grouping.hpp"
 
 namespace ECS
 {

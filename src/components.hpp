@@ -175,7 +175,7 @@ template <typename T> class ComponentsWrapper
      * @param T::Prop
      * @param Transformation pipeline behavior
      *
-     * @return Component property reference
+     * @return Component property const reference
      */
     template <typename Prop>
     [[nodiscard]] const Prop &peek(Transformation behavior, Prop T::*prop)
@@ -197,7 +197,7 @@ template <typename T> class ComponentsWrapper
      * @param T::Prop
      * @param Transformation pipeline behavior
      *
-     * @return Component property reference
+     * @return Component property const reference
      */
     template <typename Prop>
     [[nodiscard]] const Prop &peek(Prop T::*prop)
@@ -212,7 +212,7 @@ template <typename T> class ComponentsWrapper
      * @param T::Prop
      * @param Transformation pipeline behavior
      *
-     * @return Container of references to component properties
+     * @return Container of const references to component properties
      */
     template <typename... Props>
     [[nodiscard]] std::tuple<const Props &...> peek(Transformation behavior, Props T::*...props)
@@ -232,7 +232,7 @@ template <typename T> class ComponentsWrapper
      * @param T::Prop
      * @param Transformation pipeline behavior
      *
-     * @return Container of references to component properties
+     * @return Container of const references to component properties
      */
     template <typename... Props>
     [[nodiscard]] std::tuple<const Props &...> peek(Props T::*...props)

@@ -204,6 +204,8 @@ template <typename T> class ComponentsWrapper
         return peek(Transformation::DEFAULT, prop);
     }
 
+#ifndef ecs_allow_experimental
+  private:
     /**
      * @brief NON-STACKED COMPONENT ONLY! - Extract a value as readonly
      *
@@ -238,6 +240,9 @@ template <typename T> class ComponentsWrapper
     {
         return peek(Transformation::DEFAULT, props...);
     }
+
+  public:
+#endif
 
     /**
      * @brief Filter components

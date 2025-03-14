@@ -61,7 +61,7 @@ void update(ComponentManager &cm)
     // However, in the case where these components were given the "Stack" tag, thes
     // .inspect and .mutate methods would iterate over every instance and perform the operation
 
-    group.each([&](EntityId eId, auto MovementComponent &moveComps, auto PositionComponent &posComps)
+    group.each([&](EntityId eId, auto &moveComps, auto &posComps)
         moveComps.inspect([&](const MovementComponent &moveComp) {
             posComps.mutate([&](PositionComponent &posComp) {
                 posComp.x += moveComp.vX;
@@ -72,7 +72,7 @@ void update(ComponentManager &cm)
     
     // Alternatively since the movement component is not stacked, 
     // the peek method can be used to access the values
-    group.each([&](EntityId eId, auto MovementComponent &moveComps, auto PositionComponent &posComps)
+    group.each([&](EntityId eId, auto &moveComps, auto &posComps)
         auto [vX, vY] = moveComps.peek(&MovementComponent::vX, &MovementComponent::vY);
         posComps.mutate([&](PositionComponent &posComp) {
             posComp.x += moveComp.vX;
@@ -82,7 +82,7 @@ void update(ComponentManager &cm)
     
     // Perhaps some special operation needs to happen for the unique player
     auto [playerId, playerComponent] = cm.getUnique<PlayerComponent>();
-    group.each([&](EntityId eId, auto MovementComponent &moveComps, auto PositionComponent &posComps)
+    group.each([&](EntityId eId, auto &moveComps, auto &posComps)
         // Do movement update stuff from before
         if (eId == playerId)
             // Do something special, possibly using the movement/position components
